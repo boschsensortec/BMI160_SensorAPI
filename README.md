@@ -1,4 +1,4 @@
-# BMI160 Sandbox sensor API
+# BMI160 sensor API
 ## Introduction
 This package contains the Bosch Sensortec's BMI160 sensor driver (sensor API)
 

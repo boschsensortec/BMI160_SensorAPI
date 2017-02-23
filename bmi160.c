@@ -17000,7 +17000,7 @@ com_rslt += bmi160_fifo_data(&v_fifo_data_u8[BMI160_INIT_VALUE],
 v_fifo_user_length_u16);
 v_fifo_length_u16 = v_fifo_user_length_u16;
 /* loop for executing the different conditions */
-for (v_fifo_index_u16 = BMI160_INIT_VALUE;
+for (v_fifo_index_u16 = 1;
 v_fifo_index_u16 < v_fifo_length_u16;) {
 	/* condition for mag, gyro and Accel enable*/
 	if (v_data_u8 == BMI160_FIFO_M_G_A_ENABLE) {

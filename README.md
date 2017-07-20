@@ -1,60 +1,521 @@
+# BMI160 sensor API
+## Introduction
+This package contains the Bosch Sensortec's BMI160 sensor driver (sensor API)
 
-CONTENTS OF THIS FILE
-=======================
-	* Introduction
-	* Version
-	* Integration details
-	* Driver files information
-	* Supported sensor interface
-	* Copy right
+The sensor driver package includes bmi160.h, bmi160.c and bmi160_defs.h files
 
+## Version
+File | Version | Date
+-----|---------|-----
+bmi160.c |   3.5.0    |   13 Apr 2017
+bmi160.h |   3.5.0   |    13 Apr 2017
+bmi160_defs.h |   3.5.0    |   13 Apr 2017
 
-INTRODUCTION
-===============
-	- This package contains the Bosch Sensortec MEMS BMI160 sensor driver (sensor API)
-	- The sensor driver package includes bmi160.h, bmi160.c, bmi160_support.h and bmi160_support.c files
+## Integration details
+* Integrate bmi160.h, bmi160_defs.h and bmi160.c file in to your project.
+* Include the bmi160.h file in your code like below.
+``` c
+#include "bmi160.h"
+```
 
-VERSION
-=========
-	- Version of bmi160 sensor driver is:
-		* bmi160.c 		- V2.2.1
-		* bmi160.h 		- V2.2.1
-		* bmi160_support.c 	- V1.1.4
-		* bmi160_support.h 	- V1.1.2
+## File information
+* bmi160_defs.h : This header file has the constants, macros and datatype declarations.
+* bmi160.h : This header file contains the declarations of the sensor driver APIs.
+* bmi160.c : This source file contains the definitions of the sensor driver APIs.
 
-INTEGRATION DETAILS
-=====================
-	- Integrate bmi160.h and bmi160.c file in to your project.
-	- The bmi160_support.c and bmi160_support.h file contains only examples for API use cases, so it is not required to integrate into project.
+## Supported sensor interface
+* SPI 4-wire
+* I2C
 
-DRIVER FILES INFORMATION
-===========================
-	bmi160.h
-	-----------
-		* This header file has the register address definition, constant definitions, data type definition and supported sensor driver calls declarations.
+## Usage guide
+### Initializing the sensor
+To initialize the sensor, you will first need to create a device structure. You 
+can do this by creating an instance of the structure bmi160_dev. Then go on to 
+fill in the various parameters as shown below.
 
-	 bmi160.c
-	------------
-		* This file contains the implementation for the sensor driver APIs.
+#### Example for SPI 4-Wire
+``` c
+struct bmi160_dev sensor;
 
-	 bmi160_support.c
-	----------------------
-		* This file shall be used as an user guidance, here you can find samples of
-    			* Initialize the sensor with I2C/SPI communication
-        				- Add your code to the SPI and/or I2C bus read and bus write functions.
-            					- Return value can be chosen by yourself
-           					- API just passes that value to your application code
-        				- Add your code to the delay function
-        				- Change I2C address accordingly in bmi160.h
-   			* Different running modes(use cases) of BMI160 
-			* Interrupt configuration
-
-SUPPORTED SENSOR INTERFACE
-====================================
-	- This BMI160 sensor driver supports SPI and I2C interfaces
+/* You may assign a chip select identifier to be handled later */
+sensor.id = 0;
+sensor.interface = BMI160_SPI_INTF;
+sensor.read = user_spi_read;
+sensor.write = user_spi_write;
+sensor.delay_ms = user_delay_ms;
 
 
-COPYRIGHT
-===========
-	- Copyright (C) 2016 - 2017 Bosch Sensortec GmbH
+int8_t rslt = BMI160_OK;
+rslt = bmi160_init(&sensor);
+/* After the above function call, accel_cfg and gyro_cfg parameters in the device 
+structure are set with default values, found in the datasheet of the sensor */
+```
 
+#### Example for I2C
+``` c
+struct bmi160_dev sensor;
+
+sensor.id = BMI160_I2C_ADDR;
+sensor.interface = BMI160_I2C_INTF;
+sensor.read = user_i2c_read;
+sensor.write = user_i2c_write;
+sensor.delay_ms = user_delay_ms;
+
+int8_t rslt = BMI160_OK;
+rslt = bmi160_init(&sensor);
+/* After the above function call, accel and gyro parameters in the device structure 
+are set with default values, found in the datasheet of the sensor */
+```
+
+### Configuring accel and gyro sensor
+#### Example for configuring accel and gyro sensors in normal mode
+``` c
+
+int8_t rslt = BMI160_OK;
+
+/* Select the Output data rate, range of accelerometer sensor */
+sensor.accel_cfg.odr = BMI160_ACCEL_ODR_1600HZ;
+sensor.accel_cfg.range = BMI160_ACCEL_RANGE_2G;
+sensor.accel_cfg.bw = BMI160_ACCEL_BW_NORMAL_AVG4;
+
+/* Select the power mode of accelerometer sensor */
+sensor.accel_cfg.power = BMI160_ACCEL_NORMAL_MODE;
+
+/* Select the Output data rate, range of Gyroscope sensor */
+sensor.gyro_cfg.odr = BMI160_GYRO_ODR_3200HZ;
+sensor.gyro_cfg.range = BMI160_GYRO_RANGE_2000_DPS;
+sensor.gyro_cfg.bw = BMI160_GYRO_BW_NORMAL_MODE;
+
+/* Select the power mode of Gyroscope sensor */
+sensor.gyro_cfg.power = BMI160_GYRO_NORMAL_MODE; 
+
+/* Set the sensor configuration */
+rslt = bmi160_set_sens_conf(&sensor);
+```
+
+### Reading sensor data
+#### Example for reading sensor data
+``` c
+
+int8_t rslt = BMI160_OK;
+struct bmi160_sensor_data accel;
+struct bmi160_sensor_data gyro;
+
+/* To read only Accel data */
+rslt = bmi160_get_sensor_data(BMI160_ACCEL_SEL, &accel, NULL, &sensor);
+
+/* To read only Gyro data */
+rslt = bmi160_get_sensor_data(BMI160_GYRO_SEL, NULL, &gyro, &sensor);
+
+/* To read both Accel and Gyro data */
+bmi160_get_sensor_data((BMI160_ACCEL_SEL | BMI160_GYRO_SEL), &accel, &gyro, &sensor);
+
+/* To read Accel data along with time */
+rslt = bmi160_get_sensor_data((BMI160_ACCEL_SEL | BMI160_TIME_SEL) , &accel, NULL, &sensor);
+
+/* To read Gyro data along with time */
+rslt = bmi160_get_sensor_data((BMI160_GYRO_SEL | BMI160_TIME_SEL), NULL, &gyro, &sensor);
+
+/* To read both Accel and Gyro data along with time*/
+bmi160_get_sensor_data((BMI160_ACCEL_SEL | BMI160_GYRO_SEL | BMI160_TIME_SEL), &accel, &gyro, &sensor);
+```
+
+### Setting the power mode of sensors
+#### Example for setting power mode of accel and gyro
+``` c
+
+int8_t rslt = BMI160_OK;
+
+/* Select the power mode */
+sensor.accel_cfg.power = BMI160_ACCEL_SUSPEND_MODE; 
+sensor.gyro_cfg.power = BMI160_GYRO_FASTSTARTUP_MODE; 
+
+/*  Set the Power mode  */
+rslt = bmi160_set_power_mode(&sensor);
+
+/* Select the power mode */
+sensor.accel_cfg.power = BMI160_ACCEL_NORMAL_MODE;
+sensor.gyro_cfg.power = BMI160_GYRO_NORMAL_MODE; 
+
+/*  Set the Power mode  */
+rslt = bmi160_set_power_mode(&sensor);
+
+```
+
+### Reading sensor data register
+#### Example for reading Chip Address
+``` c
+
+int8_t rslt = BMI160_OK;
+uint8_t reg_addr = BMI160_CHIP_ID_ADDR;
+uint8_t data;
+uint16_t len = 1;
+rslt = bmi160_get_regs(reg_addr, &data, len, &sensor);
+```
+
+
+### Writing to sensor data register
+#### Example for writing data to any motion threshold register
+``` c
+
+int8_t rslt = BMI160_OK;
+uint8_t reg_addr = BMI160_INT_MOTION_1_ADDR;
+uint8_t data = 20;
+uint16_t len = 1;
+rslt = bmi160_set_regs(reg_addr, &data, len, &sensor);
+```
+
+### Resetting the device using soft-reset
+#### Example for writing soft-reset command to command register
+``` c
+
+int8_t rslt = BMI160_OK;
+rslt = bmi160_soft_reset(&sensor);
+```
+
+
+### Configuring interrupts for sensors
+To configure the sensor interrupts, you will first need to create an interrupt 
+structure. You can do this by creating an instance of the structure bmi160_intr_sett.
+Then go on to fill in the various parameters as shown below
+
+
+### Configuring Any-motion Interrupt
+#### Example for configuring Any-motion Interrupt
+Note:- User can check the currently active interrupt(any-motion or sig-motion) by checking the **any_sig_sel** of bmi160_dev structure.
+``` c
+
+struct bmi160_intr_sett int_config;
+
+/* Select the Interrupt channel/pin */
+int_config.int_channel = BMI160_INT_CHANNEL_1;// Interrupt channel/pin 1
+
+/* Select the Interrupt type */
+int_config.int_type = BMI160_ACC_ANY_MOTION_INT;// Choosing Any motion interrupt
+
+/* Select the interrupt channel/pin settings */
+int_config.int_pin_sett.output_en = BMI160_ENABLE;// Enabling interrupt pins to act as output pin
+int_config.int_pin_sett.output_mode = BMI160_DISABLE;// Choosing push-pull mode for interrupt pin
+int_config.int_pin_sett.output_type = BMI160_DISABLE;// Choosing active low output
+int_config.int_pin_sett.edge_ctrl = BMI160_ENABLE;// Choosing edge triggered output
+int_config.int_pin_sett.input_en = BMI160_DISABLE;// Disabling interrupt pin to act as input
+int_config.int_pin_sett.latch_dur = BMI160_LATCH_DUR_NONE;// non-latched output
+
+/* Select the Any-motion interrupt parameters */
+int_config.int_type_cfg.acc_any_motion_int.anymotion_en = BMI160_ENABLE;// 1- Enable the any-motion, 0- disable any-motion 
+int_config.int_type_cfg.acc_any_motion_int.anymotion_x = BMI160_ENABLE;// Enabling x-axis for any motion interrupt
+int_config.int_type_cfg.acc_any_motion_int.anymotion_y = BMI160_ENABLE;// Enabling y-axis for any motion interrupt
+int_config.int_type_cfg.acc_any_motion_int.anymotion_z = BMI160_ENABLE;// Enabling z-axis for any motion interrupt
+int_config.int_type_cfg.acc_any_motion_int.anymotion_dur = 0;// any-motion duration
+int_config.int_type_cfg.acc_any_motion_int.anymotion_thr = 20;// (2-g range) -> (slope_thr) * 3.91 mg, (4-g range) -> (slope_thr) * 7.81 mg, (8-g range) ->(slope_thr) * 15.63 mg, (16-g range) -> (slope_thr) * 31.25 mg 
+
+/* Set the Any-motion interrupt */
+bmi160_set_intr_config(&int_config, &sensor); /* sensor is an instance of the structure bmi160_dev  */
+
+```
+### Configuring Flat Interrupt
+#### Example for configuring Flat Interrupt
+``` c
+
+struct bmi160_intr_sett int_config;
+
+/* Select the Interrupt channel/pin */
+int_config.int_channel = BMI160_INT_CHANNEL_1;// Interrupt channel/pin 1
+
+/* Select the Interrupt type */
+int_config.int_type = BMI160_ACC_FLAT_INT;// Choosing flat interrupt
+
+/* Select the interrupt channel/pin settings */
+int_config.int_pin_sett.output_en = BMI160_ENABLE;// Enabling interrupt pins to act as output pin
+int_config.int_pin_sett.output_mode = BMI160_DISABLE;// Choosing push-pull mode for interrupt pin
+int_config.int_pin_sett.output_type = BMI160_DISABLE;// Choosing active low output
+int_config.int_pin_sett.edge_ctrl = BMI160_ENABLE;// Choosing edge triggered output
+int_config.int_pin_sett.input_en = BMI160_DISABLE;// Disabling interrupt pin to act as input
+int_config.int_pin_sett.latch_dur = BMI160_LATCH_DUR_NONE;// non-latched output
+
+/* Select the Flat interrupt parameters */
+int_config.int_type_cfg.acc_flat_int.flat_en = BMI160_ENABLE;// 1-enable, 0-disable the flat interrupt
+int_config.int_type_cfg.acc_flat_int.flat_theta = 8;// threshold for detection of flat position in range from 0° to 44.8°.
+int_config.int_type_cfg.acc_flat_int.flat_hy = 1;// Flat hysteresis
+int_config.int_type_cfg.acc_flat_int.flat_hold_time = 1;// Flat hold time (0 -> 0 ms, 1 -> 640 ms, 2 -> 1280 ms, 3 -> 2560 ms)
+
+/* Set the Flat interrupt */
+bmi160_set_intr_config(&int_config, &sensor); /* sensor is an instance of the structure bmi160_dev */
+
+```
+
+
+### Configuring Step Detector Interrupt
+#### Example for configuring Step Detector Interrupt
+``` c
+
+struct bmi160_intr_sett int_config;
+
+/* Select the Interrupt channel/pin */
+int_config.int_channel = BMI160_INT_CHANNEL_1;// Interrupt channel/pin 1
+
+/* Select the Interrupt type */
+int_config.int_type = BMI160_STEP_DETECT_INT;// Choosing Step Detector interrupt
+
+/* Select the interrupt channel/pin settings */
+int_config.int_pin_sett.output_en = BMI160_ENABLE;// Enabling interrupt pins to act as output pin
+int_config.int_pin_sett.output_mode = BMI160_DISABLE;// Choosing push-pull mode for interrupt pin
+int_config.int_pin_sett.output_type = BMI160_ENABLE;// Choosing active High output
+int_config.int_pin_sett.edge_ctrl = BMI160_ENABLE;// Choosing edge triggered output
+int_config.int_pin_sett.input_en = BMI160_DISABLE;// Disabling interrupt pin to act as input
+int_config.int_pin_sett.latch_dur =BMI160_LATCH_DUR_NONE;// non-latched output
+
+/* Select the Step Detector interrupt parameters, Kindly use the recommended settings for step detector */
+int_config.int_type_cfg.acc_step_detect_int.step_detector_mode = BMI160_STEP_DETECT_NORMAL;
+int_config.int_type_cfg.acc_step_detect_int.step_detector_en = BMI160_ENABLE;// 1-enable, 0-disable the step detector
+
+/* Set the Step Detector interrupt */
+bmi160_set_intr_config(&int_config, &sensor); /* sensor is an instance of the structure bmi160_dev */
+
+```
+
+### Configuring Step counter
+To configure the step counter, user need to configure the step detector interrupt as described in above section.
+After configuring step detector, see the below code snippet for user space & ISR
+
+### User space
+``` c
+int8_t rslt = BMI160_OK;
+uint8_t step_enable = 1;//enable the step counter
+
+rslt = bmi160_set_step_counter(step_enable,  &sensor);
+```
+
+### ISR
+``` c
+int8_t rslt = BMI160_OK;
+uint16_t step_count = 0;//stores the step counter value
+
+rslt = bmi160_read_step_counter(&step_count,  &sensor);
+```
+### Configuring the auxiliary sensor BMM150
+It is assumend that secondary interface of bmi160 has external pull-up resistor in order to access the auxiliary sensor bmm150.
+
+### Accessing auxiliary BMM150 with BMM150 APIs via BMI160 secondary interface.
+
+## Integration details 
+* Integrate the souce codes of BMM150 and BMI160 in project.
+* Include the bmi160.h and bmm150.h file in your code like below.
+* It is mandatory to initialize the bmi160 device structure for primary interface and auxiliary sensor settings.
+* Create two wrapper functions , user_aux_read and user_aux_write in order to match the signature as mentioned below.
+* Invoke the "bmi160_aux_init" API to initialise the secondary interface in BMI160.
+* Invoke the "bmm150_init" API to initialise the BMM150 sensor.
+* Now we can use the BMM150 sensor APIs to access the BMM150 via BMI160.
+
+``` c
+/* main.c file */
+#include "bmi160.h"
+#include "bmm150.h"
+```
+### Initialization of auxiliary sensor BMM150
+```
+
+/* main.c file */
+struct bmm150_dev bmm150;
+
+/* function declaration */
+int8_t user_aux_read(uint8_t id, uint8_t reg_addr, uint8_t *aux_data, uint16_t len);
+int8_t user_aux_write(uint8_t id, uint8_t reg_addr, uint8_t *aux_data, uint16_t len);
+
+/* Configure device structure for auxiliary sensor parameter */
+sensor.aux_cfg.aux_sensor_enable = 1; // auxiliary sensor enable
+sensor.aux_cfg.aux_i2c_addr = BMI160_AUX_BMM150_I2C_ADDR; // auxiliary sensor address
+sensor.aux_cfg.manual_enable = 1; // setup mode enable
+sensor.aux_cfg.aux_rd_burst_len = 2;// burst read of 2 byte
+
+/* Configure the BMM150 device structure by 
+mapping user_aux_read and user_aux_write */
+bmm150.read = user_aux_read;
+bmm150.write = user_aux_write;
+bmm150.id = BMM150_DEFAULT_I2C_ADDRESS; 
+/* Ensure that sensor.aux_cfg.aux_i2c_addr = bmm150.id
+   for proper sensor operation */
+bmm150.delay_ms = delay_ms;
+bmm150.interface = BMM150_I2C_INTF;
+
+/* Initialize the auxiliary sensor interface */
+rslt = bmi160_aux_init(&sensor);
+
+/* Auxiliary sensor is enabled and can be accessed from this point */
+
+/* Configure the desired settings in auxiliary BMM150 sensor 
+ * using the bmm150 APIs */
+
+/* Initialising the bmm150 sensor */
+rslt = bmm150_init(&bmm150);
+
+/* Set the power mode and preset mode to enable Mag data sampling */
+bmm150.settings.pwr_mode = BMM150_NORMAL_MODE;
+rslt = bmm150_set_op_mode(&bmm150);
+
+bmm150.settings.preset_mode= BMM150_PRESETMODE_LOWPOWER;
+rslt = bmm150_set_presetmode(&bmm150);
+
+```
+### Wrapper functions
+```
+
+/*wrapper function to match the signature of bmm150.read */
+int8_t user_aux_read(uint8_t id, uint8_t reg_addr, uint8_t *aux_data, uint16_t len)
+{
+	int8_t rslt;
+	
+	/* Discarding the parameter id as it is redundant*/
+        rslt = bmi160_aux_read(reg_addr, aux_data, len, &bmi160);
+
+	return rslt;
+}
+
+/*wrapper function to match the signature of bmm150.write */
+int8_t user_aux_write(uint8_t id, uint8_t reg_addr, uint8_t *aux_data, uint16_t len)
+{
+	int8_t rslt;
+	
+	/* Discarding the parameter id as it is redundant */
+	rslt = bmi160_aux_write(reg_addr, aux_data, len, &bmi160);
+
+	return rslt;
+}
+
+```
+
+### Initialization of auxiliary BMM150 in auto mode
+Any sensor whose data bytes are less than or equal to 8 bytes can be synchronized with the BMI160 
+and read out of Accelerometer + Gyroscope + Auxiliary sensor data of that instance is possible
+which helps in creating less latency fusion data
+
+```
+/* Initialize the Auxiliary BMM150 following the above code 
+   until setting the power mode and preset mode */
+
+	/* In BMM150 Mag data starts from register address 0x42 */
+	uint8_t aux_addr = 0x42;
+	/* Buffer to store the Mag data from 0x42 to 0x48 */	
+	uint8_t mag_data[8] = {0};
+	
+	uint8_t index;
+		
+	/* Set the auxiliary sensor to auto mode */
+	rslt = bmi160_set_aux_auto_mode(&aux_addr, &sensor);
+	
+	/* Configure the Auxiliary sensor either in auto/manual modes and set the 
+	polling frequency for the Auxiliary interface */	
+	sensor.aux_cfg.aux_odr = 8; /* Represents polling rate in 100 Hz*/
+	rslt = bmi160_config_aux_mode(&sensor)
+
+	/* Reading data from BMI160 data registers */
+	rslt = bmi160_read_aux_data_auto_mode(mag_data, &sensor);
+
+	printf("\n RAW DATA ");
+	for(index = 0 ; index < 8 ; index++)
+	{
+		printf("\n MAG DATA[index] : %d ", index,mag_data[index]);
+	}
+	
+	/* Compensating the raw mag data available from the BMM150 API */
+	rslt = bmm150_aux_mag_data(mag_data,&bmm150);
+	
+	printf("\n COMPENSATED DATA ");
+	printf("\n MAG DATA X : %d Y : %d Z : %d", bmm150.data.x, bmm150.data.y, bmm150.data.z);
+	
+
+```
+## Self-test  
+#### Example for performing accel self test
+```
+/* Call the "bmi160_init" API as a prerequisite before performing self test
+ * since invoking self-test will reset the sensor */
+
+	rslt = bmi160_perform_self_test(BMI160_ACCEL_ONLY, sen);
+	/* Utilize the enum BMI160_GYRO_ONLY instead of BMI160_ACCEL_ONLY
+	   to perform self test for gyro */
+	if (rslt == BMI160_OK) {
+		printf("\n ACCEL SELF TEST RESULT SUCCESS);
+	} else {
+		printf("\n ACCEL SELF TEST RESULT FAIL);
+	}
+```
+
+
+## FIFO 
+#### Example for reading FIFO and extracting Gyro data in Header mode
+```
+/* An example to read the Gyro data in header mode along with sensor time (if available)
+ * Configure the gyro sensor as prerequisite and follow the below example to read and
+ * obtain the gyro data from FIFO */
+int8_t fifo_gyro_header_time_data(struct bmi160_dev *dev)
+{
+	int8_t rslt = 0;
+
+	/* Declare memory to store the raw FIFO buffer information */
+	uint8_t fifo_buff[300];
+	
+	/* Modify the FIFO buffer instance and link to the device instance */
+	struct bmi160_fifo_frame fifo_frame;
+	fifo_frame.data = fifo_buff;
+	fifo_frame.length = 300;
+	dev->fifo = &fifo_frame;
+	uint16_t index = 0;
+	
+	/* Declare instances of the sensor data structure to store the parsed FIFO data */
+	struct bmi160_sensor_data gyro_data[42]; // 300 bytes / ~7bytes per frame ~ 42 data frames
+	uint8_t gyro_frames_req = 42; 
+	uint8_t gyro_index;
+	
+	/* Configure the sensor's FIFO settings */
+	rslt = bmi160_set_fifo_config(BMI160_FIFO_GYRO | BMI160_FIFO_HEADER | BMI160_FIFO_TIME,
+					BMI160_ENABLE, dev);
+					
+	if (rslt == BMI160_OK) {
+		/* At ODR of 100 Hz ,1 frame gets updated in 1/100 = 0.01s
+		i.e. for 42 frames we need 42 * 0.01 = 0.42s = 420ms delay */
+		dev->delay_ms(420); 
+	
+		/* Read data from the sensor's FIFO and store it the FIFO buffer,"fifo_buff" */
+		printf("\n USER REQUESTED FIFO LENGTH : %d\n",dev->fifo->length);
+		rslt = bmi160_get_fifo_data(dev);
+
+		if (rslt == BMI160_OK) {
+			printf("\n AVAILABLE FIFO LENGTH : %d\n",dev->fifo->length);
+			/* Print the raw FIFO data */
+			for (index = 0; index < dev->fifo->length; index++) {
+				printf("\n FIFO DATA INDEX[%d] = %d", index,
+					dev->fifo->data[index]);
+			}
+			/* Parse the FIFO data to extract gyro data from the FIFO buffer */
+			printf("\n REQUESTED GYRO DATA FRAMES : %d\n ",gyro_frames_req);
+			rslt = bmi160_extract_gyro(gyro_data, &gyro_frames_req, dev);
+
+			if (rslt == BMI160_OK) {
+				printf("\n AVAILABLE GYRO DATA FRAMES : %d\n ",gyro_frames_req);
+				
+				/* Print the parsed gyro data from the FIFO buffer */
+				for (gyro_index = 0; gyro_index < gyro_frames_req; gyro_index++) {
+					printf("\nFIFO GYRO FRAME[%d]",gyro_index);
+					printf("\nGYRO X-DATA : %d \t Y-DATA : %d \t Z-DATA : %d"
+						,gyro_data[gyro_index].x ,gyro_data[gyro_index].y
+						,gyro_data[gyro_index].z);
+				}
+				/* Print the special FIFO frame data like sensortime */
+				printf("\n SENSOR TIME DATA : %d \n",dev->fifo->sensor_time);
+				printf("SKIPPED FRAME COUNT : %d",dev->fifo->skipped_frame_count);
+			} else {
+				printf("\n Gyro data extraction failed");
+			}
+		} else {
+			printf("\n Reading FIFO data failed");
+		}
+	} else {
+		printf("\n Setting FIFO configuration failed");
+	}
+
+	return rslt;
+}
+```
+
+## Copyright (C) 2016 - 2017 Bosch Sensortec GmbH

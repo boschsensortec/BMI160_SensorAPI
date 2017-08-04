@@ -5,11 +5,11 @@ This package contains the Bosch Sensortec's BMI160 sensor driver (sensor API)
 The sensor driver package includes bmi160.h, bmi160.c and bmi160_defs.h files
 
 ## Version
-File | Version | Date
------|---------|-----
-bmi160.c |   3.5.0    |   13 Apr 2017
-bmi160.h |   3.5.0   |    13 Apr 2017
-bmi160_defs.h |   3.5.0    |   13 Apr 2017
+File          | Version | Date
+--------------|---------|---------------
+bmi160.c      |   3.6.0 |   04 Aug 2017
+bmi160.h      |   3.6.0 |   04 Aug 2017
+bmi160_defs.h |   3.6.0 |   04 Aug 2017
 
 ## Integration details
 * Integrate bmi160.h, bmi160_defs.h and bmi160.c file in to your project.
@@ -513,6 +513,132 @@ int8_t fifo_gyro_header_time_data(struct bmi160_dev *dev)
 	} else {
 		printf("\n Setting FIFO configuration failed");
 	}
+
+	return rslt;
+}
+```
+
+## FOC and offset compensation
+> FOC shouldnot be used in Low-power mode
+#### Example for configuring FOC for accel and gyro
+```
+/* An example for configuring FOC for accel and gyro data */
+int8_t start_foc(struct bmi160_dev *dev)
+{
+	int8_t rslt = 0;
+	/* FOC configuration structure */
+	struct bmi160_foc_conf foc_conf;
+	/* Structure to store the offsets */
+	struct bmi160_offsets offsets;
+	
+	/* Enable FOC for accel with target values of z = 1g ; x,y as 0g */
+	foc_conf.acc_off_en = BMI160_ENABLE;
+	foc_conf.foc_acc_x  = BMI160_FOC_ACCEL_0G;
+	foc_conf.foc_acc_y  = BMI160_FOC_ACCEL_0G;
+	foc_conf.foc_acc_z  = BMI160_FOC_ACCEL_POSITIVE_G;
+	
+	/* Enable FOC for gyro */
+	foc_conf.foc_gyr_en = BMI160_ENABLE;
+	foc_conf.gyro_off_en = BMI160_ENABLE;
+
+	rslt = bmi160_start_foc(&foc_conf, &offsets, sen);
+	
+	if (rslt == BMI160_OK) {
+		printf("\n FOC DONE SUCCESSFULLY ");
+		printf("\n OFFSET VALUES AFTER FOC : ");
+		printf("\n OFFSET VALUES ACCEL X : %d ",offsets.off_acc_x);
+		printf("\n OFFSET VALUES ACCEL Y : %d ",offsets.off_acc_y);
+		printf("\n OFFSET VALUES ACCEL Z : %d ",offsets.off_acc_z);
+		printf("\n OFFSET VALUES GYRO  X : %d ",offsets.off_gyro_x);
+		printf("\n OFFSET VALUES GYRO  Y : %d ",offsets.off_gyro_y);
+		printf("\n OFFSET VALUES GYRO  Z : %d ",offsets.off_gyro_z);	
+	}
+	
+	/* After start of FOC offsets will be updated automatically and 
+	 * the data will be very much close to the target values of measurement */
+
+	return rslt;
+}
+```
+
+#### Example for updating the offsets manually
+> The offsets set by this method will be reset on soft-reset/POR 
+```
+/* An example for updating manual offsets to sensor */
+int8_t write_offsets(struct bmi160_dev *dev)
+{
+	int8_t rslt = 0;
+	/* FOC configuration structure */
+	struct bmi160_foc_conf foc_conf;
+	/* Structure to store the offsets */
+	struct bmi160_offsets offsets;
+	
+	/* Enable offset update for accel */
+	foc_conf.acc_off_en = BMI160_ENABLE;
+
+	/* Enable offset update for gyro */
+	foc_conf.gyro_off_en = BMI160_ENABLE;
+	
+	/* offset values set by user */
+	offsets.off_acc_x = 0x10;
+	offsets.off_acc_y = 0x10;
+	offsets.off_acc_z = 0x10;
+	offsets.off_gyro_x = 0x10;
+	offsets.off_gyro_y = 0x10;
+	offsets.off_gyro_z = 0x10;
+
+	rslt = bmi160_set_offsets(&foc_conf, &offsets, sen);
+	
+	/* After offset setting the data read from the 
+	 * sensor will have the corresponding offset */
+	
+	return rslt;
+}
+```
+
+#### Example for updating the offsets into NVM
+> The offsets set by this method will be present in NVM and will be 
+> restored on POR/soft-reset
+```
+/* An example for updating manual offsets to sensor */
+int8_t write_offsets_nvm(struct bmi160_dev *dev)
+{
+	int8_t rslt = 0;
+	/* FOC configuration structure */
+	struct bmi160_foc_conf foc_conf;
+	/* Structure to store the offsets */
+	struct bmi160_offsets offsets;
+	
+	/* Enable offset update for accel */
+	foc_conf.acc_off_en = BMI160_ENABLE;
+
+	/* Enable offset update for gyro */
+	foc_conf.gyro_off_en = BMI160_ENABLE;
+	
+	/* offset values set by user as per their reference 
+	 * Resolution of accel = 3.9mg/LSB 
+	 * Resolution of gyro  = (0.061degrees/second)/LSB */
+	offsets.off_acc_x = 10;
+	offsets.off_acc_y = -15;
+	offsets.off_acc_z = 20;
+	offsets.off_gyro_x = 30;
+	offsets.off_gyro_y = -35;
+	offsets.off_gyro_z = -40;
+
+	rslt = bmi160_set_offsets(&foc_conf, &offsets, sen);
+	 
+	if (rslt == BMI160_OK) {
+		/* Update the NVM */
+		rslt = bmi160_update_nvm(dev);
+	}
+	
+	/* After this procedure the offsets are written to 
+	 * NVM and restored on POR/soft-reset 
+	 * The set values can be removed to ideal case by 
+	 * invoking the following APIs
+	 *     - bmi160_start_foc()	 
+	 *     - bmi160_update_nvm()
+	 */
 
 	return rslt;
 }

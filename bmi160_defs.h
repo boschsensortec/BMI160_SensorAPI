@@ -40,8 +40,8 @@
  * patent rights of the copyright holder.
  *
  * @file    bmi160_defs.h
- * @date    13 Apr 2017
- * @version 3.5.0
+ * @date    04 Aug 2017
+ * @version 3.6.0
  * @brief
  *
  */
@@ -57,6 +57,7 @@
 /*************************** C types headers *****************************/
 #ifdef __KERNEL__
 #include <linux/types.h>
+#include <linux/kernel.h>
 #else
 #include <stdint.h>
 #include <stddef.h>
@@ -69,10 +70,12 @@ extern "C"
 #endif
 
 /*************************** Common macros   *****************************/
+#ifdef __KERNEL__
 #if (LONG_MAX) > 0x7fffffff
 #define __have_long64 1
 #elif (LONG_MAX) == 0x7fffffff
 #define __have_long32 1
+#endif
 #endif
 
 #if !defined(UINT8_C)
@@ -302,7 +305,6 @@ extern "C"
 #define BMI160_AUX_IF_2_ADDR		UINT8_C(0x4D)
 #define BMI160_AUX_IF_3_ADDR		UINT8_C(0x4E)
 #define BMI160_AUX_IF_4_ADDR		UINT8_C(0x4F)
-
 #define BMI160_INT_ENABLE_0_ADDR         UINT8_C(0x50)
 #define BMI160_INT_ENABLE_1_ADDR         UINT8_C(0x51)
 #define BMI160_INT_ENABLE_2_ADDR         UINT8_C(0x52)
@@ -328,8 +330,13 @@ extern "C"
 #define BMI160_INT_ORIENT_1_ADDR         UINT8_C(0x66)
 #define BMI160_INT_FLAT_0_ADDR           UINT8_C(0x67)
 #define BMI160_INT_FLAT_1_ADDR           UINT8_C(0x68)
+#define BMI160_FOC_CONF_ADDR             UINT8_C(0x69)
+#define BMI160_CONF_ADDR                 UINT8_C(0x6A)
+
 #define BMI160_IF_CONF_ADDR		 UINT8_C(0x6B)
 #define BMI160_SELF_TEST_ADDR		 UINT8_C(0x6D)
+#define BMI160_OFFSET_ADDR		 UINT8_C(0x71)
+#define BMI160_OFFSET_CONF_ADDR		 UINT8_C(0x77)
 #define BMI160_INT_STEP_CNT_0_ADDR	 UINT8_C(0x78)
 #define BMI160_INT_STEP_CONFIG_0_ADDR    UINT8_C(0x7A)
 #define BMI160_INT_STEP_CONFIG_1_ADDR    UINT8_C(0x7B)
@@ -349,6 +356,7 @@ extern "C"
 #define BMI160_E_LWP_PRE_FLTR_INT_INVALID INT8_C(-8)
 #define BMI160_E_LWP_PRE_FLTR_INVALID	  INT8_C(-9)
 #define BMI160_E_AUX_NOT_FOUND		  INT8_C(-10)
+#define BMI160_FOC_FAILURE		  INT8_C(-11)
 
 /**\name API warning codes */
 #define BMI160_W_GYRO_SELF_TEST_FAIL	INT8_C(1)
@@ -360,6 +368,10 @@ extern "C"
 /** Soft reset command */
 #define BMI160_SOFT_RESET_CMD            UINT8_C(0xb6)
 #define BMI160_SOFT_RESET_DELAY_MS       UINT8_C(15)
+/** Start FOC command */
+#define BMI160_START_FOC_CMD            UINT8_C(0x03)
+/** NVM backup enabling command */
+#define BMI160_NVM_BACKUP_EN		UINT8_C(0xA0)
 
 /* Delay in ms settings */
 #define BMI160_ACCEL_DELAY_MS            UINT8_C(5)
@@ -547,6 +559,12 @@ extern "C"
 #define FIFO_CONFIG_MSB_CHECK            UINT8_C(0x80)
 #define FIFO_CONFIG_LSB_CHECK            UINT8_C(0x00)
 
+/*! BMI160 accel FOC configurations */
+#define BMI160_FOC_ACCEL_DISABLED        UINT8_C(0x00)
+#define BMI160_FOC_ACCEL_POSITIVE_G      UINT8_C(0x01)
+#define BMI160_FOC_ACCEL_NEGATIVE_G      UINT8_C(0x02)
+#define BMI160_FOC_ACCEL_0G              UINT8_C(0x03)
+
 /** Array Parameter DefinItions */
 #define BMI160_SENSOR_TIME_LSB_BYTE      UINT8_C(0)
 #define BMI160_SENSOR_TIME_XLSB_BYTE     UINT8_C(1)
@@ -589,6 +607,14 @@ extern "C"
 /** BMI160 fifo flush Command */
 #define BMI160_FIFO_FLUSH_VALUE          UINT8_C(0xB0)
 
+/** BMI160 offset values for xyz axes of accel */
+#define BMI160_ACCEL_MIN_OFFSET         INT8_C(-128)
+#define BMI160_ACCEL_MAX_OFFSET         INT8_C(127)
+
+/** BMI160 offset values for xyz axes of gyro */
+#define BMI160_GYRO_MIN_OFFSET         INT16_C(-512)
+#define BMI160_GYRO_MAX_OFFSET         INT16_C(511)
+
 /** BMI160 fifo full interrupt position and mask */
 #define	BMI160_FIFO_FULL_INT_POS	UINT8_C(5)
 #define	BMI160_FIFO_FULL_INT_MSK	UINT8_C(0x20)
@@ -615,6 +641,43 @@ extern "C"
 #define BMI160_GYRO_SELF_TEST_STATUS_POS	UINT8_C(1)
 #define BMI160_GYRO_SELF_TEST_STATUS_MSK	UINT8_C(0x02)
 
+#define BMI160_GYRO_FOC_EN_POS	UINT8_C(6)
+#define BMI160_GYRO_FOC_EN_MSK	UINT8_C(0x40)
+
+#define BMI160_ACCEL_FOC_X_CONF_POS	UINT8_C(4)
+#define BMI160_ACCEL_FOC_X_CONF_MSK	UINT8_C(0x30)
+
+#define BMI160_ACCEL_FOC_Y_CONF_POS	UINT8_C(2)
+#define BMI160_ACCEL_FOC_Y_CONF_MSK	UINT8_C(0x0C)
+
+#define BMI160_ACCEL_FOC_Z_CONF_MSK	UINT8_C(0x03)
+
+#define BMI160_FOC_STATUS_POS	UINT8_C(3)
+#define BMI160_FOC_STATUS_MSK	UINT8_C(0x08)
+
+#define BMI160_GYRO_OFFSET_X_MSK	UINT8_C(0x03)
+
+#define BMI160_GYRO_OFFSET_Y_POS	UINT8_C(2)
+#define BMI160_GYRO_OFFSET_Y_MSK	UINT8_C(0x0C)
+
+#define BMI160_GYRO_OFFSET_Z_POS	UINT8_C(4)
+#define BMI160_GYRO_OFFSET_Z_MSK	UINT8_C(0x30)
+
+#define BMI160_GYRO_OFFSET_EN_POS	UINT8_C(7)
+#define BMI160_GYRO_OFFSET_EN_MSK	UINT8_C(0x80)
+
+#define BMI160_ACCEL_OFFSET_EN_POS	UINT8_C(6)
+#define BMI160_ACCEL_OFFSET_EN_MSK	UINT8_C(0x40)
+
+
+#define BMI160_GYRO_OFFSET_POS	        UINT16_C(8)
+#define BMI160_GYRO_OFFSET_MSK	        UINT16_C(0x0300)
+
+#define BMI160_NVM_UPDATE_POS	        UINT8_C(1)
+#define BMI160_NVM_UPDATE_MSK	        UINT8_C(0x02)
+
+#define BMI160_NVM_STATUS_POS	        UINT8_C(4)
+#define BMI160_NVM_STATUS_MSK	        UINT8_C(0x10)
 
 /* BIT SLICE GET AND SET FUNCTIONS */
 #define	BMI160_GET_BITS(regvar, bitname)\
@@ -628,6 +691,13 @@ extern "C"
 				(data & bitname##_MSK))
 
 #define BMI160_GET_BITS_POS_0(reg_data, bitname)  (reg_data & (bitname##_MSK))
+
+/**\name UTILITY MACROS	*/
+#define BMI160_SET_LOW_BYTE     UINT16_C(0x00FF)
+#define BMI160_SET_HIGH_BYTE    UINT16_C(0xFF00)
+
+#define BMI160_GET_LSB(var)	(uint8_t)(var & BMI160_SET_LOW_BYTE)
+#define BMI160_GET_MSB(var)	(uint8_t)((var & BMI160_SET_HIGH_BYTE) >> 8)
 
 /*****************************************************************************/
 /* type definitions */
@@ -650,6 +720,61 @@ struct bmi160_sensor_data {
 	int16_t z;
 	/*! sensor time */
 	uint32_t sensortime;
+};
+
+/*!
+ * @brief bmi160 FOC configuration structure
+ */
+struct bmi160_foc_conf {
+	/*! Enabling FOC in gyro
+	 * Assignable macros :
+	 *  - BMI160_ENABLE
+	 *  - BMI160_DISABLE
+	 */
+	uint8_t foc_gyr_en;
+
+	/*! Accel FOC configurations
+	 * Assignable macros :
+	 *  - BMI160_FOC_ACCEL_DISABLED
+	 *  - BMI160_FOC_ACCEL_POSITIVE_G
+	 *  - BMI160_FOC_ACCEL_NEGATIVE_G
+	 *  - BMI160_FOC_ACCEL_0G
+	 */
+	uint8_t foc_acc_x;
+	uint8_t foc_acc_y;
+	uint8_t foc_acc_z;
+
+	/*! Enabling offset compensation for accel in data registers
+	 * Assignable macros :
+	 *  - BMI160_ENABLE
+	 *  - BMI160_DISABLE
+	 */
+	uint8_t acc_off_en;
+
+	/*! Enabling offset compensation for gyro in data registers
+	 * Assignable macros :
+	 *  - BMI160_ENABLE
+	 *  - BMI160_DISABLE
+	 */
+	uint8_t gyro_off_en;
+};
+
+/*!
+ * @brief bmi160 accel gyro offsets
+ */
+struct bmi160_offsets {
+	/*! Accel offset for x axis */
+	int8_t off_acc_x;
+	/*! Accel offset for y axis */
+	int8_t off_acc_y;
+	/*! Accel offset for z axis */
+	int8_t off_acc_z;
+	/*! Gyro offset for x axis */
+	int16_t off_gyro_x;
+	/*! Gyro offset for y axis */
+	int16_t off_gyro_y;
+	/*! Gyro offset for z axis */
+	int16_t off_gyro_z;
 };
 
 /*!

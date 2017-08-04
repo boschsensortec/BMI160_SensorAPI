@@ -40,8 +40,8 @@
  * patent rights of the copyright holder.
  *
  * @file    bmi160.c
- * @date    13 Apr 2017
- * @version 3.5.0
+ * @date    04 Aug 2017
+ * @version 3.6.0
  * @brief
  *
  */
@@ -1298,8 +1298,8 @@ static void move_next_frame(uint16_t *data_index, uint8_t current_frame_length, 
  *  FIFO data in the structure instance dev.
  *
  *  @param[in,out] data_index : Index of the FIFO data which
- *                             has the sensor time.
- *  @param[in] dev        : Structure instance of bma4_dev.
+ *                              has the sensor time.
+ *  @param[in] dev            : Structure instance of bmi160_dev.
  *
  *  @return Result of API execution status
  *  @retval zero -> Success  / -ve value -> Error
@@ -1310,14 +1310,49 @@ static void unpack_sensortime_frame(uint16_t *data_index, const struct bmi160_de
  *  @brief This API is used to parse and store the skipped_frame_count from
  *  the FIFO data in the structure instance dev.
  *
- *  @param[in,out] data_index       : Index of the FIFO data which
+ *  @param[in,out] data_index   : Index of the FIFO data which
  *                                    has the skipped frame count.
- *  @param[in] dev              : Structure instance of bma4_dev.
+ *  @param[in] dev              : Structure instance of bmi160_dev.
  *
  *  @return Result of API execution status
  *  @retval zero -> Success  / -ve value -> Error
  */
 static void unpack_skipped_frame(uint16_t *data_index, const struct bmi160_dev *dev);
+
+/*!
+ *  @brief This API is used to get the FOC status from the sensor
+ *
+ *  @param[in,out] foc_status   : Result of FOC status.
+ *  @param[in] dev              : Structure instance of bmi160_dev.
+ *
+ *  @return Result of API execution status
+ *  @retval zero -> Success  / -ve value -> Error
+ */
+static int8_t get_foc_status(uint8_t *foc_status, struct bmi160_dev const *dev);
+
+/*!
+ *  @brief This API is used to configure the offset enable bits in the sensor
+ *
+ *  @param[in,out] foc_conf   : Structure instance of bmi160_foc_conf which
+ *                                   has the FOC and offset configurations
+ *  @param[in] dev            : Structure instance of bmi160_dev.
+ *
+ *  @return Result of API execution status
+ *  @retval zero -> Success  / -ve value -> Error
+ */
+static int8_t configure_offset_enable(const struct bmi160_foc_conf *foc_conf, struct bmi160_dev const *dev);
+
+/*!
+ *  @brief This API is used to trigger the FOC in the sensor
+ *
+ *  @param[in,out] offset     : Structure instance of bmi160_offsets which
+ *                              reads and stores the offset values after FOC
+ *  @param[in] dev            : Structure instance of bmi160_dev.
+ *
+ *  @return Result of API execution status
+ *  @retval zero -> Success  / -ve value -> Error
+ */
+static int8_t trigger_foc(struct bmi160_offsets *offset, struct bmi160_dev const *dev);
 
 /*********************** User function definitions ****************************/
 
@@ -1911,7 +1946,7 @@ int8_t bmi160_get_fifo_data(struct bmi160_dev const *dev)
 	uint8_t addr = BMI160_FIFO_DATA_ADDR;
 
 	/* check the bmi160 structure as NULL*/
-	if (dev == NULL || dev->fifo->data == NULL) {
+	if ((dev == NULL) || (dev->fifo->data == NULL)) {
 		rslt = BMI160_E_NULL_PTR;
 	} else {
 		reset_fifo_data_structure(dev);
@@ -1925,7 +1960,8 @@ int8_t bmi160_get_fifo_data(struct bmi160_dev const *dev)
 				dev->fifo->length = bytes_to_read;
 			}
 
-			if ((dev->fifo->fifo_time_enable == BMI160_FIFO_TIME_ENABLE) &&  (bytes_to_read + 4 <= user_fifo_len)) {
+			if ((dev->fifo->fifo_time_enable == BMI160_FIFO_TIME_ENABLE)
+				&& (bytes_to_read + 4 <= user_fifo_len)) {
 				/* Handling case of sensor time availability */
 				dev->fifo->length = dev->fifo->length + 4;
 			}
@@ -2124,6 +2160,193 @@ int8_t bmi160_extract_gyro(struct bmi160_sensor_data *gyro_data, uint8_t *gyro_l
 			/* Parsing the FIFO data in header mode */
 			extract_gyro_header_mode(gyro_data, &gyro_index, dev);
 			*gyro_length = gyro_index;
+		}
+	}
+
+	return rslt;
+}
+
+/*!
+ *  @brief This API starts the FOC of accel and gyro
+ *
+ *  @note FOC should not be used in low-power mode of sensor
+ *
+ *  @note Accel FOC targets values of +1g , 0g , -1g
+ *  Gyro FOC always targets value of 0 dps
+ */
+int8_t bmi160_start_foc(const struct bmi160_foc_conf *foc_conf, struct bmi160_offsets *offset,
+				struct bmi160_dev const *dev)
+{
+	int8_t rslt;
+	uint8_t data;
+
+	/* Null-pointer check */
+	rslt = null_ptr_check(dev);
+
+	if (rslt != BMI160_OK) {
+		rslt = BMI160_E_NULL_PTR;
+	} else {
+		/* Set the offset enable bits */
+		rslt = configure_offset_enable(foc_conf, dev);
+		if (rslt == BMI160_OK) {
+			/* Read the FOC config from the sensor */
+			rslt = bmi160_get_regs(BMI160_FOC_CONF_ADDR, &data, 1, dev);
+
+			/* Set the FOC config for gyro */
+			data = BMI160_SET_BITS(data, BMI160_GYRO_FOC_EN, foc_conf->foc_gyr_en);
+
+			/* Set the FOC config for accel xyz axes */
+			data = BMI160_SET_BITS(data, BMI160_ACCEL_FOC_X_CONF, foc_conf->foc_acc_x);
+			data = BMI160_SET_BITS(data, BMI160_ACCEL_FOC_Y_CONF, foc_conf->foc_acc_y);
+			data = BMI160_SET_BITS_POS_0(data, BMI160_ACCEL_FOC_Z_CONF, foc_conf->foc_acc_z);
+
+			if (rslt == BMI160_OK) {
+				/* Set the FOC config in the sensor */
+				rslt = bmi160_set_regs(BMI160_FOC_CONF_ADDR, &data, 1, dev);
+				if (rslt == BMI160_OK) {
+					/* Procedure to trigger
+					 * FOC and check status */
+					rslt = trigger_foc(offset, dev);
+				}
+			}
+		}
+	}
+
+	return rslt;
+}
+
+/*!
+ *  @brief This API reads and stores the offset values of accel and gyro
+ */
+int8_t bmi160_get_offsets(struct bmi160_offsets *offset, const struct bmi160_dev *dev)
+{
+	int8_t rslt;
+	uint8_t data[7];
+	uint8_t lsb, msb;
+	int16_t offset_msb, offset_lsb;
+	int16_t offset_data;
+
+
+	/* Null-pointer check */
+	rslt = null_ptr_check(dev);
+
+	if (rslt != BMI160_OK) {
+		rslt = BMI160_E_NULL_PTR;
+	} else {
+		/* Read the FOC config from the sensor */
+		rslt = bmi160_get_regs(BMI160_OFFSET_ADDR, data, 7, dev);
+
+		/* Accel offsets */
+		offset->off_acc_x = (int8_t)data[0];
+		offset->off_acc_y = (int8_t)data[1];
+		offset->off_acc_z = (int8_t)data[2];
+
+		/* Gyro x-axis offset */
+		lsb = data[3];
+		msb = BMI160_GET_BITS_POS_0(data[6], BMI160_GYRO_OFFSET_X);
+		offset_msb = (int16_t)(msb << 14);
+		offset_lsb = lsb << 6;
+		offset_data = offset_msb | offset_lsb;
+		/* Divide by 64 to get the Right shift by 6 value */
+		offset->off_gyro_x = (int16_t)(offset_data / 64);
+
+		/* Gyro y-axis offset */
+		lsb = data[4];
+		msb = BMI160_GET_BITS(data[6], BMI160_GYRO_OFFSET_Y);
+		offset_msb = (int16_t)(msb << 14);
+		offset_lsb = lsb << 6;
+		offset_data = offset_msb | offset_lsb;
+		/* Divide by 64 to get the Right shift by 6 value */
+		offset->off_gyro_y = (int16_t)(offset_data / 64);
+
+		/* Gyro z-axis offset */
+		lsb = data[5];
+		msb = BMI160_GET_BITS(data[6], BMI160_GYRO_OFFSET_Z);
+		offset_msb = (int16_t)(msb << 14);
+		offset_lsb = lsb << 6;
+		offset_data = offset_msb | offset_lsb;
+		/* Divide by 64 to get the Right shift by 6 value */
+		offset->off_gyro_z = (int16_t)(offset_data / 64);
+	}
+
+	return rslt;
+}
+
+/*!
+ *  @brief This API writes the offset values of accel and gyro to
+ *  the sensor but these values will be reset on POR or soft reset.
+ */
+int8_t bmi160_set_offsets(const struct bmi160_foc_conf *foc_conf, const struct bmi160_offsets *offset,
+				struct bmi160_dev const *dev)
+{
+	int8_t rslt;
+	uint8_t data[7];
+	uint8_t x_msb, y_msb, z_msb;
+
+
+	/* Null-pointer check */
+	rslt = null_ptr_check(dev);
+
+	if (rslt != BMI160_OK) {
+		rslt = BMI160_E_NULL_PTR;
+	} else {
+		/* Update the accel offset */
+		data[0] = (uint8_t)offset->off_acc_x;
+		data[1] = (uint8_t)offset->off_acc_y;
+		data[2] = (uint8_t)offset->off_acc_z;
+
+		/* Update the LSB of gyro offset */
+		data[3] = BMI160_GET_LSB(offset->off_gyro_x);
+		data[4] = BMI160_GET_LSB(offset->off_gyro_y);
+		data[5] = BMI160_GET_LSB(offset->off_gyro_z);
+
+		/* Update the MSB of gyro offset */
+		x_msb = BMI160_GET_BITS(offset->off_gyro_x, BMI160_GYRO_OFFSET);
+		y_msb = BMI160_GET_BITS(offset->off_gyro_y, BMI160_GYRO_OFFSET);
+		z_msb = BMI160_GET_BITS(offset->off_gyro_z, BMI160_GYRO_OFFSET);
+		data[6] = (uint8_t)(z_msb << 4 | y_msb << 2 | x_msb);
+
+		/* Set the offset enable/disable for gyro and accel */
+		data[6] = BMI160_SET_BITS(data[6], BMI160_GYRO_OFFSET_EN, foc_conf->gyro_off_en);
+		data[6] = BMI160_SET_BITS(data[6], BMI160_ACCEL_OFFSET_EN, foc_conf->acc_off_en);
+
+		/* Set the offset config and values in the sensor */
+		rslt = bmi160_set_regs(BMI160_OFFSET_ADDR, data, 7, dev);
+	}
+
+	return rslt;
+}
+
+/*!
+ *  @brief This API writes the image registers values to NVM which is
+ *  stored even after POR or soft reset
+ */
+int8_t bmi160_update_nvm(struct bmi160_dev const *dev)
+{
+	int8_t rslt;
+	uint8_t data;
+	uint8_t cmd = BMI160_NVM_BACKUP_EN;
+
+	/* Read the nvm_prog_en configuration */
+	rslt = bmi160_get_regs(BMI160_CONF_ADDR, &data, 1, dev);
+	if (rslt == BMI160_OK) {
+		data = BMI160_SET_BITS(data, BMI160_NVM_UPDATE, 1);
+		/* Set the nvm_prog_en bit in the sensor */
+		rslt = bmi160_set_regs(BMI160_CONF_ADDR, &data, 1, dev);
+		if (rslt == BMI160_OK) {
+			/* Update NVM */
+			rslt = bmi160_set_regs(BMI160_COMMAND_REG_ADDR, &cmd, 1, dev);
+			if (rslt == BMI160_OK) {
+				/* Check for NVM ready status */
+				rslt = bmi160_get_regs(BMI160_STATUS_ADDR, &data, 1, dev);
+				if (rslt == BMI160_OK) {
+					data = BMI160_GET_BITS(data, BMI160_NVM_STATUS);
+					if (data != BMI160_ENABLE) {
+						/* Delay to update NVM */
+						dev->delay_ms(25);
+					}
+				}
+			}
 		}
 	}
 
@@ -2776,7 +2999,7 @@ static int8_t set_accel_pwr(struct bmi160_dev *dev)
 		if (dev->accel_cfg.power != dev->prev_accel_cfg.power) {
 			rslt = process_under_sampling(&data, dev);
 			if (rslt == BMI160_OK) {
-					/* Write accel power */
+				/* Write accel power */
 				rslt = bmi160_set_regs(BMI160_COMMAND_REG_ADDR, &dev->accel_cfg.power, 1, dev);
 				/* Add delay of 5 ms */
 				if (dev->prev_accel_cfg.power == BMI160_ACCEL_SUSPEND_MODE)
@@ -5270,6 +5493,99 @@ static void unpack_skipped_frame(uint16_t *data_index, const struct bmi160_dev *
 		/*Move the data index*/
 		*data_index = (*data_index) + 1;
 	}
+}
+
+/*!
+ *  @brief This API is used to get the FOC status from the sensor
+ */
+static int8_t get_foc_status(uint8_t *foc_status, struct bmi160_dev const *dev)
+{
+	int8_t rslt;
+	uint8_t data;
+
+	/* Read the FOC status from sensor */
+	rslt = bmi160_get_regs(BMI160_STATUS_ADDR, &data, 1, dev);
+	if (rslt == BMI160_OK) {
+		/* Get the foc_status bit */
+		*foc_status = BMI160_GET_BITS(data, BMI160_FOC_STATUS);
+	}
+
+	return rslt;
+}
+
+/*!
+ *  @brief This API is used to configure the offset enable bits in the sensor
+ */
+static int8_t configure_offset_enable(const struct bmi160_foc_conf *foc_conf, struct bmi160_dev const *dev)
+{
+	int8_t rslt;
+	uint8_t data;
+
+	/* Null-pointer check */
+	rslt = null_ptr_check(dev);
+
+	if (rslt != BMI160_OK) {
+		rslt = BMI160_E_NULL_PTR;
+	} else {
+		/* Read the FOC config from the sensor */
+		rslt = bmi160_get_regs(BMI160_OFFSET_CONF_ADDR, &data, 1, dev);
+
+		if (rslt == BMI160_OK) {
+			/* Set the offset enable/disable for gyro */
+			data = BMI160_SET_BITS(data, BMI160_GYRO_OFFSET_EN, foc_conf->gyro_off_en);
+
+			/* Set the offset enable/disable for accel */
+			data = BMI160_SET_BITS(data, BMI160_ACCEL_OFFSET_EN, foc_conf->acc_off_en);
+
+			/* Set the offset config in the sensor */
+			rslt = bmi160_set_regs(BMI160_OFFSET_CONF_ADDR, &data, 1, dev);
+		}
+	}
+
+	return rslt;
+}
+
+static int8_t trigger_foc(struct bmi160_offsets *offset, struct bmi160_dev const *dev)
+{
+	int8_t rslt;
+	uint8_t foc_status;
+	uint8_t cmd = BMI160_START_FOC_CMD;
+	uint8_t timeout = 0;
+	uint8_t data_array[20];
+
+	/* Start the FOC process */
+	rslt = bmi160_set_regs(BMI160_COMMAND_REG_ADDR, &cmd, 1, dev);
+	if (rslt == BMI160_OK) {
+		/* Check the FOC status*/
+		rslt = get_foc_status(&foc_status, dev);
+		if ((rslt != BMI160_OK) || (foc_status != BMI160_ENABLE)) {
+			while ((foc_status != BMI160_ENABLE) && (timeout < 11)) {
+				/* Maximum time of 250ms is given in 10
+				 * steps of 25ms each */
+				dev->delay_ms(25);
+				/* Check the FOC status*/
+				rslt = get_foc_status(&foc_status, dev);
+				timeout++;
+			}
+
+			if ((rslt == BMI160_OK) && (foc_status == BMI160_ENABLE)) {
+				/* Get offset values from sensor */
+				rslt = bmi160_get_offsets(offset, dev);
+			} else {
+				/* FOC failure case */
+				rslt = BMI160_FOC_FAILURE;
+			}
+		}
+
+		if (rslt == BMI160_OK) {
+			/* Read registers 0x04-0x17 */
+			rslt = bmi160_get_regs(BMI160_GYRO_DATA_ADDR,
+				data_array, 20, dev);
+		}
+	}
+
+
+	return rslt;
 }
 
 /** @}*/

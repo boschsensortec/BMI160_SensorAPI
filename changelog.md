@@ -1,6 +1,14 @@
 # Change Log
 All notable changes to bmi160 Sensor API will be documented in this file. 
 
+## v3.6.0, 04 Aug 2017
+
+#### Added
+* Added interfaces for the following features 
+     - FOC
+     - Manual Offset compensation
+     - Offset compenation value update to NVM
+
 ## v3.5.0, 13 Apr 2017
 
 #### Added

@@ -40,8 +40,8 @@
  * patent rights of the copyright holder.
  *
  * @file    bmi160.h
- * @date    13 Apr 2017
- * @version 3.5.0
+ * @date    04 Aug 2017
+ * @version 3.6.0
  * @brief
  *
  */
@@ -515,6 +515,99 @@ int8_t bmi160_extract_accel(struct bmi160_sensor_data *accel_data, uint8_t *acce
  *
  */
 int8_t bmi160_extract_gyro(struct bmi160_sensor_data *gyro_data, uint8_t *gyro_length, struct bmi160_dev const *dev);
+
+/*!
+ *  @brief This API starts the FOC of accel and gyro
+ *
+ *  @note FOC should not be used in low-power mode of sensor
+ *
+ *  @note Accel FOC targets values of +1g , 0g , -1g
+ *  Gyro FOC always targets value of 0 dps
+ *
+ *  @param[in] foc_conf    : Structure instance of bmi160_foc_conf which
+ *                                   has the FOC configuration
+ *  @param[in,out] offset  : Structure instance to store Offset
+ *                                   values read from sensor
+ *  @param[in] dev         : Structure instance of bmi160_dev.
+ *
+ *  @note Pre-requisites for triggering FOC in accel , Set the following,
+ *   Enable the acc_off_en
+ *       Ex :  foc_conf.acc_off_en = BMI160_ENABLE;
+ *
+ *   Set the desired target values of FOC to each axes (x,y,z) by using the
+ *   following macros
+ *       - BMI160_FOC_ACCEL_DISABLED
+ *       - BMI160_FOC_ACCEL_POSITIVE_G
+ *       - BMI160_FOC_ACCEL_NEGATIVE_G
+ *       - BMI160_FOC_ACCEL_0G
+ *
+ *   Ex : foc_conf.foc_acc_x  = BMI160_FOC_ACCEL_0G;
+ *        foc_conf.foc_acc_y  = BMI160_FOC_ACCEL_0G;
+ *        foc_conf.foc_acc_z  = BMI160_FOC_ACCEL_POSITIVE_G;
+ *
+ *  @note Pre-requisites for triggering FOC in gyro ,
+ *  Set the following parameters,
+ *
+ *   Ex : foc_conf.foc_gyr_en = BMI160_ENABLE;
+ *        foc_conf.gyro_off_en = BMI160_ENABLE;
+ *
+ *  @return Result of API execution status
+ *  @retval 0 -> Success
+ *  @retval Any non zero value -> Fail
+ */
+int8_t bmi160_start_foc(const struct bmi160_foc_conf *foc_conf, struct bmi160_offsets *offset,
+				struct bmi160_dev const *dev);
+
+/*!
+ *  @brief This API reads and stores the offset values of accel and gyro
+ *
+ *  @param[in,out] offset : Structure instance of bmi160_offsets in which
+ *                          the offset values are read and stored
+ *  @param[in] dev        : Structure instance of bmi160_dev.
+ *
+ *  @return Result of API execution status
+ *  @retval 0 -> Success
+ *  @retval Any non zero value -> Fail
+ */
+int8_t bmi160_get_offsets(struct bmi160_offsets *offset, const struct bmi160_dev *dev);
+
+/*!
+ *  @brief This API writes the offset values of accel and gyro to
+ *  the sensor but these values will be reset on POR or soft reset.
+ *
+ *  @param[in] foc_conf    : Structure instance of bmi160_foc_conf which
+ *                                   has the FOC configuration
+ *  @param[in] offset      : Structure instance in which user updates offset
+ *                            values which are to be written in the sensor
+ *  @param[in] dev         : Structure instance of bmi160_dev.
+ *
+ *  @note Offsets can be set by user like offset->off_acc_x = 10;
+ *  where 1LSB = 3.9mg and for gyro 1LSB = 0.061degrees/second
+ *
+ * @note BMI160 offset values for xyz axes of accel should be within range of
+ *  BMI160_ACCEL_MIN_OFFSET (-128) to BMI160_ACCEL_MAX_OFFSET (127)
+ *
+ * @note BMI160 offset values for xyz axes of gyro should be within range of
+ *  BMI160_GYRO_MIN_OFFSET (-512) to BMI160_GYRO_MAX_OFFSET (511)
+ *
+ *  @return Result of API execution status
+ *  @retval 0 -> Success
+ *  @retval Any non zero value -> Fail
+ */
+int8_t bmi160_set_offsets(const struct bmi160_foc_conf *foc_conf, const struct bmi160_offsets *offset,
+				struct bmi160_dev const *dev);
+
+/*!
+ *  @brief This API writes the image registers values to NVM which is
+ *  stored even after POR or soft reset
+ *
+ *  @param[in] dev         : Structure instance of bmi160_dev.
+ *
+ *  @return Result of API execution status
+ *  @retval 0 -> Success
+ *  @retval Any non zero value -> Fail
+ */
+int8_t bmi160_update_nvm(struct bmi160_dev const *dev);
 
 #ifdef __cplusplus
 }

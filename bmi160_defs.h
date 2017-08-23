@@ -40,8 +40,8 @@
  * patent rights of the copyright holder.
  *
  * @file    bmi160_defs.h
- * @date    04 Aug 2017
- * @version 3.6.0
+ * @date    23 Aug 2017
+ * @version 3.6.1
  * @brief
  *
  */
@@ -422,7 +422,7 @@ extern "C"
 #define BMI160_ACCEL_BW_OSR4_AVG1        UINT8_C(0x00)
 #define BMI160_ACCEL_BW_OSR2_AVG2        UINT8_C(0x01)
 #define BMI160_ACCEL_BW_NORMAL_AVG4      UINT8_C(0x02)
-#define BMI160_ACCEL_BW_CIC_AVG8         UINT8_C(0x03)
+#define BMI160_ACCEL_BW_RES_AVG8         UINT8_C(0x03)
 #define BMI160_ACCEL_BW_RES_AVG16        UINT8_C(0x04)
 #define BMI160_ACCEL_BW_RES_AVG32        UINT8_C(0x05)
 #define BMI160_ACCEL_BW_RES_AVG64        UINT8_C(0x06)
@@ -431,7 +431,6 @@ extern "C"
 #define BMI160_GYRO_BW_OSR4_MODE         UINT8_C(0x00)
 #define BMI160_GYRO_BW_OSR2_MODE         UINT8_C(0x01)
 #define BMI160_GYRO_BW_NORMAL_MODE       UINT8_C(0x02)
-#define BMI160_GYRO_BW_CIC_MODE          UINT8_C(0x03)
 
 /* Output Data Rate settings */
 /* Accel Output data rate */

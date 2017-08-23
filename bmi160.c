@@ -40,8 +40,8 @@
  * patent rights of the copyright holder.
  *
  * @file    bmi160.c
- * @date    04 Aug 2017
- * @version 3.6.0
+ * @date    23 Aug 2017
+ * @version 3.6.1
  * @brief
  *
  */
@@ -1966,6 +1966,11 @@ int8_t bmi160_get_fifo_data(struct bmi160_dev const *dev)
 				dev->fifo->length = dev->fifo->length + 4;
 			}
 
+			if (dev->interface == BMI160_SPI_INTF) {
+				/* SPI read mask */
+				addr = addr | BMI160_SPI_RD_MASK;
+			}
+
 			/* read only the filled bytes in the FIFO Buffer */
 			rslt = dev->read(dev->id, addr, dev->fifo->data, dev->fifo->length);
 		}
@@ -2118,8 +2123,7 @@ int8_t bmi160_extract_accel(struct bmi160_sensor_data *accel_data, uint8_t *acce
 			dev->fifo->accel_byte_start_idx = data_index;
 		} else {
 			/* Parsing the FIFO data in header mode */
-			extract_accel_header_mode(accel_data, &accel_index, dev);
-			*accel_length = accel_index;
+			extract_accel_header_mode(accel_data, accel_length, dev);
 		}
 	}
 
@@ -2158,8 +2162,7 @@ int8_t bmi160_extract_gyro(struct bmi160_sensor_data *gyro_data, uint8_t *gyro_l
 			dev->fifo->gyro_byte_start_idx = data_index;
 		} else {
 			/* Parsing the FIFO data in header mode */
-			extract_gyro_header_mode(gyro_data, &gyro_index, dev);
-			*gyro_length = gyro_index;
+			extract_gyro_header_mode(gyro_data, gyro_length, dev);
 		}
 	}
 
@@ -5198,6 +5201,10 @@ static void extract_accel_header_mode(struct bmi160_sensor_data *accel_data, uin
 		default:
 			break;
 		}
+		if (*accel_length == accel_index) {
+			/* Number of frames to read completed */
+			break;
+		}
 	}
 
 	/*Update number of accel data read*/
@@ -5412,6 +5419,10 @@ static void extract_gyro_header_mode(struct bmi160_sensor_data *gyro_data, uint8
 			data_index = dev->fifo->length;
 			break;
 		default:
+			break;
+		}
+		if (*gyro_length == gyro_index) {
+			/*Number of frames to read completed*/
 			break;
 		}
 	}

@@ -7,9 +7,9 @@ The sensor driver package includes bmi160.h, bmi160.c and bmi160_defs.h files
 ## Version
 File          | Version | Date
 --------------|---------|---------------
-bmi160.c      |   3.6.0 |   04 Aug 2017
-bmi160.h      |   3.6.0 |   04 Aug 2017
-bmi160_defs.h |   3.6.0 |   04 Aug 2017
+bmi160.c      |   3.6.1 |   23 Aug 2017
+bmi160.h      |   3.6.1 |   23 Aug 2017
+bmi160_defs.h |   3.6.1 |   23 Aug 2017
 
 ## Integration details
 * Integrate bmi160.h, bmi160_defs.h and bmi160.c file in to your project.
@@ -294,7 +294,7 @@ uint16_t step_count = 0;//stores the step counter value
 rslt = bmi160_read_step_counter(&step_count,  &sensor);
 ```
 ### Configuring the auxiliary sensor BMM150
-It is assumend that secondary interface of bmi160 has external pull-up resistor in order to access the auxiliary sensor bmm150.
+It is assumed that secondary interface of bmi160 has external pull-up resistor in order to access the auxiliary sensor bmm150.
 
 ### Accessing auxiliary BMM150 with BMM150 APIs via BMI160 secondary interface.
 

@@ -40,8 +40,8 @@
  * patent rights of the copyright holder.
  *
  * @file    bmi160.h
- * @date    04 Aug 2017
- * @version 3.6.0
+ * @date    23 Aug 2017
+ * @version 3.6.1
  * @brief
  *
  */
@@ -334,7 +334,7 @@ int8_t bmi160_read_aux_data_auto_mode(uint8_t *aux_data, const struct bmi160_dev
 int8_t bmi160_perform_self_test(uint8_t select_sensor, struct bmi160_dev *dev);
 
 /*!
- *  @brief This API reads the data from fifo buffer.
+ *  @brief This API reads data from the fifo buffer.
  *
  *  @note User has to allocate the FIFO buffer along with
  *  corresponding fifo length from his side before calling this API

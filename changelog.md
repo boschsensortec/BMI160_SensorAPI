@@ -1,6 +1,11 @@
 # Change Log
 All notable changes to bmi160 Sensor API will be documented in this file. 
 
+## v3.6.1, 23 Aug 2017
+
+#### Changed
+* SPI support for FIFO reading and parsing logic update
+
 ## v3.6.0, 04 Aug 2017
 
 #### Added

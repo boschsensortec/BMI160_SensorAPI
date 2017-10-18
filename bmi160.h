@@ -40,8 +40,8 @@
  * patent rights of the copyright holder.
  *
  * @file    bmi160.h
- * @date    23 Aug 2017
- * @version 3.6.1
+ * @date    16 Oct 2017
+ * @version 3.7.2
  * @brief
  *
  */
@@ -121,7 +121,7 @@ int8_t bmi160_set_regs(uint8_t reg_addr, uint8_t *data, uint16_t len, const stru
  * @return Result of API execution status
  * @retval zero -> Success / -ve value -> Error.
  */
-int8_t bmi160_soft_reset(const struct bmi160_dev *dev);
+int8_t bmi160_soft_reset(struct bmi160_dev *dev);
 
 /*!
  * @brief This API configures the power mode, range and bandwidth
@@ -496,7 +496,7 @@ int8_t bmi160_extract_accel(struct bmi160_sensor_data *accel_data, uint8_t *acce
  *  FIFO data read by the "bmi160_get_fifo_data" API and stores it in
  *  the "gyro_data" structure instance.
  *
- *  @note The bmi160_extract_accel API should be called only after
+ *  @note The bmi160_extract_gyro API should be called only after
  *  reading the FIFO data by calling the bmi160_get_fifo_data() API.
  *
  *  @param[out] gyro_data    : Structure instance of bmi160_sensor_data
@@ -515,6 +515,31 @@ int8_t bmi160_extract_accel(struct bmi160_sensor_data *accel_data, uint8_t *acce
  *
  */
 int8_t bmi160_extract_gyro(struct bmi160_sensor_data *gyro_data, uint8_t *gyro_length, struct bmi160_dev const *dev);
+
+/*!
+ *  @brief This API parses and extracts the aux frames from
+ *  FIFO data read by the "bmi160_get_fifo_data" API and stores it in
+ *  the bmi160_aux_data structure instance.
+ *
+ *  @note The bmi160_extract_aux API should be called only after
+ *  reading the FIFO data by calling the bmi160_get_fifo_data() API.
+ *
+ *  @param[out] aux_data    : Structure instance of bmi160_aux_data
+ *                            where the aux data in FIFO is stored.
+ *  @param[in,out] aux_len  : Number of valid aux frames (8bytes)
+ *                            read out from FIFO.
+ *  @param[in] dev          : Structure instance of bmi160_dev.
+ *
+ *  @note aux_len is updated with the number of valid aux
+ *  frames extracted from fifo (1 aux frame = 8 bytes) at the end of
+ *  execution of this API.
+ *
+ *  @return Result of API execution status
+ *  @retval 0 -> Success
+ *  @retval Any non zero value -> Fail
+ *
+ */
+int8_t bmi160_extract_aux(struct bmi160_aux_data *aux_data, uint8_t *aux_len, struct bmi160_dev const *dev);
 
 /*!
  *  @brief This API starts the FOC of accel and gyro
@@ -608,6 +633,22 @@ int8_t bmi160_set_offsets(const struct bmi160_foc_conf *foc_conf, const struct b
  *  @retval Any non zero value -> Fail
  */
 int8_t bmi160_update_nvm(struct bmi160_dev const *dev);
+
+/*!
+ *  @brief This API gets the interrupt status from the sensor.
+ *
+ *  @param[in] int_status_sel		: Enum variable to select either individual or all the
+ *  interrupt status bits.
+ *	@param[in] int_status			: pointer variable to get the interrupt status
+ *	from the sensor.
+ *	param[in] dev					: Structure instance of bmi160_dev.
+ *
+ *  @return Result of API execution status
+ *  @retval 0 -> Success
+ *  @retval Any non zero value -> Fail
+ */
+int8_t bmi160_get_int_status(enum bmi160_int_status_sel int_status_sel,
+				union bmi160_int_status *int_status, struct bmi160_dev const *dev);
 
 #ifdef __cplusplus
 }

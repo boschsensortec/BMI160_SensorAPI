@@ -40,8 +40,8 @@
  * patent rights of the copyright holder.
  *
  * @file    bmi160.c
- * @date    23 Aug 2017
- * @version 3.6.1
+ * @date    16 Oct 2017
+ * @version 3.7.2
  * @brief
  *
  */
@@ -52,6 +52,25 @@
  * @{*/
 
 #include "bmi160.h"
+
+/* Below look up table follows the enum bmi160_int_types.
+ * Hence any change should match to the enum bmi160_int_types
+ */
+const uint8_t int_mask_lookup_table[13] = {
+		BMI160_INT1_SLOPE_MASK,
+		BMI160_INT1_SLOPE_MASK,
+		BMI160_INT2_LOW_STEP_DETECT_MASK,
+		BMI160_INT1_DOUBLE_TAP_MASK,
+		BMI160_INT1_SINGLE_TAP_MASK,
+		BMI160_INT1_ORIENT_MASK,
+		BMI160_INT1_FLAT_MASK,
+		BMI160_INT1_HIGH_G_MASK,
+		BMI160_INT1_LOW_G_MASK,
+		BMI160_INT1_NO_MOTION_MASK,
+		BMI160_INT2_DATA_READY_MASK,
+		BMI160_INT2_FIFO_FULL_MASK,
+		BMI160_INT2_FIFO_WM_MASK
+};
 
 /*********************************************************************/
 /* Static function declarations */
@@ -426,20 +445,6 @@ static int8_t enable_accel_any_motion_int(const struct bmi160_acc_any_mot_int_cf
 static int8_t disable_sig_motion_int(const struct bmi160_dev *dev);
 
 /*!
- * @brief This API maps the INT pin to any-motion or
- * sig-motion interrupt.
- *
- * @param[in] int_config	: Structure instance of bmi160_int_settg.
- * @param[in] dev		: Structure instance of bmi160_dev.
- *
- * @return Result of API execution status
- * @retval zero -> Success  / -ve value -> Error
- */
-static int8_t map_int_pin_to_sig_any_motion(
-	const struct bmi160_int_settg *int_config,
-	const struct bmi160_dev *dev);
-
-/*!
  * @brief This API configure the source of data(filter & pre-filter)
  * for any-motion interrupt.
  *
@@ -493,17 +498,6 @@ static int8_t config_any_motion_int_settg(const struct bmi160_int_settg *int_con
 static int8_t enable_data_ready_int(const struct bmi160_dev *dev);
 
 /*!
- * @brief This API maps the data ready interrupt to INT pin as per selection.
- *
- * @param[in] int_config	: Structure instance of bmi160_int_settg.
- * @param[in] dev		: Structure instance of bmi160_dev.
- *
- * @return Result of API execution status
- * @retval zero -> Success  / -ve value -> Error
- */
-static int8_t map_data_ready_int(const struct bmi160_int_settg *int_config, const struct bmi160_dev *dev);
-
-/*!
  * @brief This API enables the no motion/slow motion interrupt.
  *
  * @param[in] no_mot_int_cfg	: Structure instance of
@@ -531,17 +525,6 @@ static int8_t enable_no_motion_int(const struct bmi160_acc_no_motion_int_cfg *no
 static int8_t config_no_motion_int_settg(const struct bmi160_int_settg *int_config,
 					const struct bmi160_acc_no_motion_int_cfg *no_mot_int_cfg,
 					const struct bmi160_dev *dev);
-
-/*!
- * @brief This API maps the INT pin to no motion/slow interrupt.
- *
- * @param[in] int_config	: Structure instance of bmi160_int_settg.
- * @param[in] dev		: Structure instance of bmi160_dev.
- *
- * @return Result of API execution status
- * @retval zero -> Success  / -ve value -> Error
- */
-static int8_t map_int_pin_to_no_motion(const struct bmi160_int_settg *int_config, const struct bmi160_dev *dev);
 
 /*!
  * @brief This API configure the source of interrupt for no motion.
@@ -640,17 +623,6 @@ static int8_t enable_step_detect_int(const struct bmi160_acc_step_detect_int_cfg
 					const struct bmi160_dev *dev);
 
 /*!
- * @brief This API maps the INT pin to low-g or step detector interrupt.
- *
- * @param[in] int_config	: Structure instance of bmi160_int_settg.
- * @param[in] dev		: Structure instance of bmi160_dev.
- *
- * @return Result of API execution status
- * @retval zero -> Success  / -ve value -> Error
- */
-static int8_t map_int_pin_to_low_step_detect(const struct bmi160_int_settg *int_config, const struct bmi160_dev *dev);
-
-/*!
  * @brief This API configure the step detector parameter.
  *
  * @param[in] step_detect_int_cfg	: Structure instance of
@@ -690,17 +662,6 @@ static int8_t enable_tap_int(const struct bmi160_int_settg *int_config,
 static int8_t config_tap_int_settg(const struct bmi160_int_settg *int_config,
 					const struct bmi160_acc_tap_int_cfg *tap_int_cfg,
 					const struct bmi160_dev *dev);
-
-/*!
- * @brief This API maps the INT pin to single or double tap interrupt.
- *
- * @param[in] int_config	: Structure instance of bmi160_int_settg.
- * @param[in] dev		: Structure instance of bmi160_dev.
- *
- * @return Result of API execution status
- * @retval zero -> Success  / -ve value -> Error
- */
-static int8_t map_int_pin_to_tap(const struct bmi160_int_settg *int_config, const struct bmi160_dev *dev);
 
 /*!
  * @brief This API configure the source of data(filter & pre-filter)
@@ -798,17 +759,6 @@ static int8_t extract_aux_read(uint16_t map_len, uint8_t reg_addr, uint8_t *aux_
 static int8_t enable_orient_int(const struct bmi160_acc_orient_int_cfg *orient_int_cfg, const struct bmi160_dev *dev);
 
 /*!
- * @brief This API maps the INT pin to orientation interrupt.
- *
- * @param[in] int_config	: Structure instance of bmi160_int_settg.
- * @param[in] dev		: structure instance of bmi160_dev.
- *
- * @return Result of API execution status
- * @retval zero -> Success  / -ve value -> Error
- */
-static int8_t map_int_pin_to_orient(const struct bmi160_int_settg *int_config, const struct bmi160_dev *dev);
-
-/*!
  * @brief This API configure the necessary setting of orientation interrupt.
  *
  * @param[in] orient_int_cfg : Structure instance of bmi160_acc_orient_int_cfg.
@@ -830,17 +780,6 @@ static int8_t config_orient_int_settg(const struct bmi160_acc_orient_int_cfg *or
  * @retval zero -> Success  / -ve value -> Error
  */
 static int8_t enable_flat_int(const struct bmi160_acc_flat_detect_int_cfg *flat_int, const struct bmi160_dev *dev);
-
-/*!
- * @brief This API maps the INT pin to flat interrupt.
- *
- * @param[in] int_config	: Structure instance of bmi160_int_settg.
- * @param[in] dev		: structure instance of bmi160_dev.
- *
- * @return Result of API execution status
- * @retval zero -> Success  / -ve value -> Error
- */
-static int8_t map_int_pin_to_flat(const struct bmi160_int_settg *int_config, const struct bmi160_dev *dev);
 
 /*!
  * @brief This API configure the necessary setting of flat interrupt.
@@ -897,17 +836,6 @@ static int8_t config_low_g_int_settg(const struct bmi160_acc_low_g_int_cfg *low_
  * @retval zero -> Success  / -ve value -> Error
  */
 static int8_t enable_high_g_int(const struct bmi160_acc_high_g_int_cfg *high_g_int_cfg, const struct bmi160_dev *dev);
-
-/*!
- * @brief This API maps the INT pin to High-g interrupt.
- *
- * @param[in] int_config	: Structure instance of bmi160_int_settg.
- * @param[in] dev		: structure instance of bmi160_dev.
- *
- * @return Result of API execution status
- * @retval zero -> Success  / -ve value -> Error
- */
-static int8_t map_int_pin_to_high_g(const struct bmi160_int_settg *int_config, const struct bmi160_dev *dev);
 
 /*!
  * @brief This API configure the source of data(filter & pre-filter)
@@ -1070,17 +998,6 @@ static int8_t set_fifo_full_int(const struct bmi160_int_settg *int_config, const
 static int8_t enable_fifo_full_int(const struct bmi160_int_settg *int_config, const struct bmi160_dev *dev);
 
 /*!
- * @brief This API maps the INT pin to FIFO FULL interrupt.
- *
- * @param[in] int_config	: Structure instance of bmi160_int_settg.
- * @param[in] dev		: structure instance of bmi160_dev.
- *
- * @return Result of API execution status
- * @retval zero -> Success  / -ve value -> Error
- */
-static int8_t map_int_pin_to_fifo_full(const struct bmi160_int_settg *int_config, const struct bmi160_dev *dev);
-
-/*!
  *  @brief This API sets FIFO watermark interrupt of the sensor.The FIFO
  *  watermark interrupt is fired, when the FIFO fill level is above a fifo
  *  watermark.
@@ -1103,17 +1020,6 @@ static int8_t set_fifo_watermark_int(const struct bmi160_int_settg *int_config, 
  * @retval zero -> Success  / -ve value -> Error
  */
 static int8_t enable_fifo_wtm_int(const struct bmi160_int_settg *int_config, const struct bmi160_dev *dev);
-
-/*!
- * @brief This API maps the INT pin to FIFO watermark interrupt.
- *
- * @param[in] int_config	: Structure instance of bmi160_int_settg.
- * @param[in] dev		: structure instance of bmi160_dev.
- *
- * @return Result of API execution status
- * @retval zero -> Success  / -ve value -> Error
- */
-static int8_t map_int_pin_to_fifo_wtm(const struct bmi160_int_settg *int_config, const struct bmi160_dev *dev);
 
 /*!
  * @brief This API is used to reset the FIFO related configurations
@@ -1266,6 +1172,67 @@ static void extract_gyro_header_mode(struct bmi160_sensor_data *gyro_data, uint8
 					const struct bmi160_dev *dev);
 
 /*!
+ *  @brief This API computes the number of bytes of aux FIFO data
+ *  which is to be parsed in header-less mode
+ *
+ *  @param[out] data_index       : The start index for parsing data
+ *  @param[out] data_read_length : No of bytes to be parsed from FIFO buffer
+ *  @param[in] aux_frame_count   : Number of Aux data frames to be read
+ *  @param[in] dev               : Structure instance of bmi160_dev.
+ */
+static void get_aux_len_to_parse(uint16_t *data_index, uint16_t *data_read_length, const uint8_t *aux_frame_count,
+					const struct bmi160_dev *dev);
+
+/*!
+ *  @brief This API is used to parse the aux's data from the
+ *  FIFO data in both header mode and header-less mode.
+ *  It updates the idx value which is used to store the index of
+ *  the current data byte which is parsed
+ *
+ *  @param[in,out] aux_data	: structure instance of sensor data
+ *  @param[in,out] idx		: Index value of number of bytes parsed
+ *  @param[in,out] aux_index	: Index value of gyro data
+ *                                (x,y,z axes) frames parsed
+ *  @param[in] frame_info       : It consists of either fifo_data_enable
+ *                                parameter in header-less mode or
+ *                                frame header data in header mode
+ *  @param[in] dev		: structure instance of bmi160_dev.
+ *
+ *  @return Result of API execution status
+ *  @retval zero -> Success  / -ve value -> Error
+ */
+static void unpack_aux_frame(struct bmi160_aux_data *aux_data, uint16_t *idx, uint8_t *aux_index, uint8_t frame_info,
+				const struct bmi160_dev *dev);
+
+/*!
+ *  @brief This API is used to parse the aux data from the
+ *  FIFO data and store it in the instance of the structure bmi160_aux_data.
+ *
+ * @param[in,out] aux_data	    : structure instance of sensor data
+ * @param[in,out] data_start_index  : Index value of number of bytes parsed
+ * @param[in] dev		    : structure instance of bmi160_dev.
+ *
+ * @return Result of API execution status
+ * @retval zero -> Success  / -ve value -> Error
+ */
+static void unpack_aux_data(struct bmi160_aux_data *aux_data, uint16_t data_start_index,
+				const struct bmi160_dev *dev);
+
+/*!
+ *  @brief This API is used to parse the aux data from the
+ *  FIFO data in header mode.
+ *
+ *  @param[in,out] aux_data     : Structure instance of sensor data
+ *  @param[in,out] aux_length   : Number of aux frames
+ *  @param[in] dev              : Structure instance of bmi160_dev.
+ *
+ *  @return Result of API execution status
+ *  @retval zero -> Success  / -ve value -> Error
+ */
+static void extract_aux_header_mode(struct bmi160_aux_data *aux_data, uint8_t *aux_length,
+					const struct bmi160_dev *dev);
+
+/*!
  *  @brief This API checks the presence of non-valid frames in the read fifo data.
  *
  *  @param[in,out] data_index	 : The index of the current data to
@@ -1354,8 +1321,34 @@ static int8_t configure_offset_enable(const struct bmi160_foc_conf *foc_conf, st
  */
 static int8_t trigger_foc(struct bmi160_offsets *offset, struct bmi160_dev const *dev);
 
-/*********************** User function definitions ****************************/
+/*!
+ *  @brief This API is used to map/unmap the Dataready(Accel & Gyro), FIFO full
+ *  and FIFO watermark interrupt
+ *
+ *  @param[in] int_config     : Structure instance of bmi160_int_settg which
+ *                              stores the interrupt type and interrupt channel
+ *				configurations to map/unmap the interrupt pins
+ *  @param[in] dev            : Structure instance of bmi160_dev.
+ *
+ *  @return Result of API execution status
+ *  @retval zero -> Success  / -ve value -> Error
+ */
+static int8_t map_hardware_interrupt(const struct bmi160_int_settg *int_config, const struct bmi160_dev *dev);
 
+/*!
+ *  @brief This API is used to map/unmap the Any/Sig motion, Step det/Low-g,
+ *  Double tap, Single tap, Orientation, Flat, High-G, Nomotion interrupt pins.
+ *
+ *  @param[in] int_config     : Structure instance of bmi160_int_settg which
+ *                              stores the interrupt type and interrupt channel
+ *				configurations to map/unmap the interrupt pins
+ *  @param[in] dev            : Structure instance of bmi160_dev.
+ *
+ *  @return Result of API execution status
+ *  @retval zero -> Success  / -ve value -> Error
+ */
+static int8_t map_feature_interrupt(const struct bmi160_int_settg *int_config, const struct bmi160_dev *dev);
+/*********************** User function definitions ****************************/
 /*!
  * @brief This API reads the data from the given register address
  * of sensor.
@@ -1447,10 +1440,8 @@ int8_t bmi160_init(struct bmi160_dev *dev)
 		if ((rslt == BMI160_OK) && (chip_id == BMI160_CHIP_ID)) {
 			dev->chip_id = chip_id;
 			dev->any_sig_sel = BMI160_BOTH_ANY_SIG_MOTION_DISABLED;
-			/*Soft reset*/
+			/* Soft reset */
 			rslt = bmi160_soft_reset(dev);
-			if (rslt == BMI160_OK)
-				default_param_settg(dev);
 		} else {
 			rslt = BMI160_E_DEV_NOT_FOUND;
 		}
@@ -1463,7 +1454,7 @@ int8_t bmi160_init(struct bmi160_dev *dev)
  * @brief This API resets and restarts the device.
  * All register values are overwritten with default parameters.
  */
-int8_t bmi160_soft_reset(const struct bmi160_dev *dev)
+int8_t bmi160_soft_reset(struct bmi160_dev *dev)
 {
 	int8_t rslt;
 	uint8_t data = BMI160_SOFT_RESET_CMD;
@@ -1479,6 +1470,10 @@ int8_t bmi160_soft_reset(const struct bmi160_dev *dev)
 			/* Dummy read of 0x7F register to enable SPI Interface
 			if SPI is used */
 			rslt = bmi160_get_regs(BMI160_SPI_COMM_TEST_ADDR, &data, 1, dev);
+		}
+		if (rslt == BMI160_OK) {
+			/* Update the default parameters */
+			default_param_settg(dev);
 		}
 	}
 
@@ -1797,7 +1792,6 @@ int8_t bmi160_aux_init(const struct bmi160_dev *dev)
 int8_t bmi160_set_aux_auto_mode(uint8_t *data_addr, struct bmi160_dev *dev)
 {
 	int8_t rslt;
-
 	/* Null-pointer check */
 	rslt = null_ptr_check(dev);
 
@@ -1809,16 +1803,18 @@ int8_t bmi160_set_aux_auto_mode(uint8_t *data_addr, struct bmi160_dev *dev)
 			rslt = bmi160_set_regs(BMI160_AUX_IF_2_ADDR, data_addr, 1, dev);
 			dev->delay_ms(BMI160_AUX_COM_DELAY);
 			if (rslt == BMI160_OK) {
-				/* Disable the aux. manual mode, i.e aux.
-				sensor is in auto-mode (data-mode) */
-				dev->aux_cfg.manual_enable = BMI160_DISABLE;
-				rslt = bmi160_config_aux_mode(dev);
-				/* Auxiliary sensor data is obtained
-				   in auto mode from this point */
-				if (rslt == BMI160_OK) {
-					/* Configure the polling ODR for
-					auxiliary sensor */
+				/* Configure the polling ODR for
+				auxiliary sensor */
 					rslt = config_aux_odr(dev);
+
+				if (rslt == BMI160_OK) {
+					/* Disable the aux. manual mode, i.e aux.
+					 * sensor is in auto-mode (data-mode) */
+					dev->aux_cfg.manual_enable = BMI160_DISABLE;
+					rslt = bmi160_config_aux_mode(dev);
+
+					/*  Auxiliary sensor data is obtained
+					 * in auto mode from this point */
 				}
 			}
 		} else {
@@ -1999,8 +1995,8 @@ int8_t bmi160_set_fifo_flush(const struct bmi160_dev *dev)
 	return rslt;
 }
 
-/*! @brief This API sets the FIFO configuration in the sensor.
- *
+/*!
+ * @brief This API sets the FIFO configuration in the sensor.
  */
 int8_t bmi160_set_fifo_config(uint8_t config, uint8_t enable, struct bmi160_dev const *dev)
 {
@@ -2163,6 +2159,46 @@ int8_t bmi160_extract_gyro(struct bmi160_sensor_data *gyro_data, uint8_t *gyro_l
 		} else {
 			/* Parsing the FIFO data in header mode */
 			extract_gyro_header_mode(gyro_data, gyro_length, dev);
+		}
+	}
+
+	return rslt;
+}
+
+/*!
+ *  @brief This API parses and extracts the aux frames from
+ *  FIFO data read by the "bmi160_get_fifo_data" API and stores it in
+ *  the "aux_data" structure instance.
+ */
+int8_t bmi160_extract_aux(struct bmi160_aux_data *aux_data, uint8_t *aux_len, struct bmi160_dev const *dev)
+{
+	int8_t rslt = 0;
+	uint16_t data_index = 0;
+	uint16_t data_read_length = 0;
+	uint8_t aux_index = 0;
+	uint8_t fifo_data_enable = 0;
+
+	if ((dev == NULL) || (dev->fifo->data == NULL) || (aux_data == NULL)) {
+		rslt = BMI160_E_NULL_PTR;
+	} else {
+		/* Parsing the FIFO data in header-less mode */
+		if (dev->fifo->fifo_header_enable == 0) {
+			/* Number of bytes to be parsed from FIFO */
+			get_aux_len_to_parse(&data_index, &data_read_length, aux_len, dev);
+			for (; data_index < data_read_length ;) {
+				/* Check for the availability of next two
+				 * bytes of FIFO data */
+				check_frame_validity(&data_index, dev);
+				fifo_data_enable = dev->fifo->fifo_data_enable;
+				unpack_aux_frame(aux_data, &data_index, &aux_index, fifo_data_enable, dev);
+			}
+			/* update number of aux data read */
+			*aux_len = aux_index;
+			/* update the aux byte index */
+			dev->fifo->aux_byte_start_idx = data_index;
+		} else {
+			/* Parsing the FIFO data in header mode */
+			extract_aux_header_mode(aux_data, aux_len, dev);
 		}
 	}
 
@@ -2356,6 +2392,31 @@ int8_t bmi160_update_nvm(struct bmi160_dev const *dev)
 	return rslt;
 }
 
+/*!
+ *  @brief This API gets the interrupt status from the sensor.
+ */
+int8_t bmi160_get_int_status(enum bmi160_int_status_sel int_status_sel,
+				union bmi160_int_status *int_status, struct bmi160_dev const *dev)
+{
+	int8_t rslt = 0;
+
+	/* To get the status of all interrupts */
+	if (int_status_sel == BMI160_INT_STATUS_ALL) {
+		rslt = bmi160_get_regs(BMI160_INT_STATUS_ADDR, &int_status->data[0], 4, dev);
+	} else {
+		if (int_status_sel & BMI160_INT_STATUS_0)
+			rslt = bmi160_get_regs(BMI160_INT_STATUS_ADDR, &int_status->data[0], 1, dev);
+		if (int_status_sel & BMI160_INT_STATUS_1)
+			rslt = bmi160_get_regs(BMI160_INT_STATUS_ADDR + 1, &int_status->data[1], 1, dev);
+		if (int_status_sel & BMI160_INT_STATUS_2)
+			rslt = bmi160_get_regs(BMI160_INT_STATUS_ADDR + 2, &int_status->data[2], 1, dev);
+		if (int_status_sel & BMI160_INT_STATUS_3)
+			rslt = bmi160_get_regs(BMI160_INT_STATUS_ADDR + 3, &int_status->data[3], 1, dev);
+	}
+
+	return rslt;
+}
+
 /*********************** Local function definitions ***************************/
 
 /*!
@@ -2434,7 +2495,7 @@ static int8_t set_accel_gyro_data_ready_int(const struct bmi160_int_settg *int_c
 			rslt = set_intr_pin_config(int_config, dev);
 
 			if (rslt == BMI160_OK)
-				rslt = map_data_ready_int(int_config, dev);
+				rslt = map_hardware_interrupt(int_config, dev);
 		}
 	}
 
@@ -2518,7 +2579,7 @@ static int8_t set_accel_step_detect_int(struct bmi160_int_settg *int_config, con
 			/* Configure Interrupt pins */
 			rslt = set_intr_pin_config(int_config, dev);
 			if (rslt == BMI160_OK) {
-				rslt = map_int_pin_to_low_step_detect(int_config, dev);
+				rslt = map_feature_interrupt(int_config, dev);
 				if (rslt == BMI160_OK)
 					rslt = config_step_detect(step_detect_int_cfg, dev);
 			}
@@ -2551,7 +2612,7 @@ static int8_t set_accel_orientation_int(struct bmi160_int_settg *int_config, con
 			rslt = set_intr_pin_config(int_config, dev);
 			if (rslt == BMI160_OK) {
 				/* map INT pin to orient interrupt */
-				rslt = map_int_pin_to_orient(int_config, dev);
+				rslt = map_feature_interrupt(int_config, dev);
 				if (rslt == BMI160_OK)
 					/* configure the
 					 * orientation setting*/
@@ -2587,7 +2648,7 @@ static int8_t set_accel_flat_detect_int(struct bmi160_int_settg *int_config, con
 			rslt = set_intr_pin_config(int_config, dev);
 			if (rslt == BMI160_OK) {
 				/* map INT pin to flat interrupt */
-				rslt = map_int_pin_to_flat(int_config, dev);
+				rslt = map_feature_interrupt(int_config, dev);
 				if (rslt == BMI160_OK)
 					/* configure the flat setting*/
 					rslt = config_flat_int_settg(flat_detect_int, dev);
@@ -2622,7 +2683,7 @@ static int8_t set_accel_low_g_int(struct bmi160_int_settg *int_config, const str
 			rslt = set_intr_pin_config(int_config, dev);
 			if (rslt == BMI160_OK) {
 				/* Map INT pin to low-g interrupt */
-				rslt = map_int_pin_to_low_step_detect(int_config, dev);
+				rslt = map_feature_interrupt(int_config, dev);
 				if (rslt == BMI160_OK) {
 					/* configure the data source
 					 * for low-g interrupt*/
@@ -2663,7 +2724,7 @@ static int8_t set_accel_high_g_int(struct bmi160_int_settg *int_config, const st
 			rslt = set_intr_pin_config(int_config, dev);
 			if (rslt == BMI160_OK) {
 				/* Map INT pin to high-g interrupt */
-				rslt = map_int_pin_to_high_g(int_config, dev);
+				rslt = map_feature_interrupt(int_config, dev);
 				if (rslt == BMI160_OK) {
 					/* configure the data source
 					* for high-g interrupt*/
@@ -3041,10 +3102,11 @@ static int8_t process_under_sampling(uint8_t *data, const struct bmi160_dev *dev
 				rslt = bmi160_set_regs(BMI160_INT_DATA_0_ADDR, &pre_filter, 2, dev);
 		} else {
 			if (*data & BMI160_ACCEL_UNDERSAMPLING_MASK) {
+
 				temp = *data & ~BMI160_ACCEL_UNDERSAMPLING_MASK;
 				/* disable under-sampling parameter
 				if already enabled */
-				*data = temp | 0x7F;
+				*data = temp;
 				/* Write data */
 				rslt = bmi160_set_regs(BMI160_ACCEL_CONFIG_ADDR, data, 1, dev);
 			}
@@ -3073,7 +3135,7 @@ static int8_t set_gyro_pwr(struct bmi160_dev *dev)
 				/* Delay of 81 ms */
 				dev->delay_ms(BMI160_GYRO_DELAY_MS);
 			} else if ((dev->prev_gyro_cfg.power == BMI160_GYRO_FASTSTARTUP_MODE)
-				&& (dev->accel_cfg.power == BMI160_GYRO_NORMAL_MODE)) {
+				&& (dev->gyro_cfg.power == BMI160_GYRO_NORMAL_MODE)) {
 				/* This delay is required for transition from
 				fast-startup mode to normal mode */
 				dev->delay_ms(10);
@@ -3354,31 +3416,82 @@ static int8_t disable_sig_motion_int(const struct bmi160_dev *dev)
 }
 
 /*!
- * @brief This API maps the INT pin to any-motion or
- * sig-motion interrupt.
+ *  @brief This API is used to map/unmap the Any/Sig motion, Step det/Low-g,
+ *  Double tap, Single tap, Orientation, Flat, High-G, Nomotion interrupt pins.
  */
-static int8_t map_int_pin_to_sig_any_motion(const struct bmi160_int_settg *int_config, const struct bmi160_dev *dev)
+static int8_t map_feature_interrupt(const struct bmi160_int_settg *int_config, const struct bmi160_dev *dev)
+{
+	int8_t rslt;
+	uint8_t data[3] = {0, 0, 0};
+	uint8_t temp[3] = {0, 0, 0};
+
+	rslt = bmi160_get_regs(BMI160_INT_MAP_0_ADDR, data, 3, dev);
+
+	if (rslt == BMI160_OK) {
+		temp[0] = data[0] & ~int_mask_lookup_table[int_config->int_type];
+		temp[2] = data[2] & ~int_mask_lookup_table[int_config->int_type];
+
+		switch (int_config->int_channel) {
+		case BMI160_INT_CHANNEL_NONE:
+			data[0] = temp[0];
+			data[2] = temp[2];
+			break;
+		case BMI160_INT_CHANNEL_1:
+			data[0] = temp[0] | int_mask_lookup_table[int_config->int_type];
+			data[2] = temp[2];
+			break;
+		case BMI160_INT_CHANNEL_2:
+			data[2] = temp[2] | int_mask_lookup_table[int_config->int_type];
+			data[0] = temp[0];
+			break;
+		case BMI160_INT_CHANNEL_BOTH:
+			data[0] = temp[0] | int_mask_lookup_table[int_config->int_type];
+			data[2] = temp[2] | int_mask_lookup_table[int_config->int_type];
+			break;
+		default:
+			rslt = BMI160_E_OUT_OF_RANGE;
+		}
+		if (rslt == BMI160_OK)
+			rslt = bmi160_set_regs(BMI160_INT_MAP_0_ADDR, data, 3, dev);
+	}
+
+	return rslt;
+}
+
+/*!
+ *  @brief This API is used to map/unmap the Dataready(Accel & Gyro), FIFO full
+ *  and FIFO watermark interrupt.
+ */
+static int8_t map_hardware_interrupt(const struct bmi160_int_settg *int_config, const struct bmi160_dev *dev)
 {
 	int8_t rslt;
 	uint8_t data = 0;
 	uint8_t temp = 0;
 
-	/* Configure Int Map register to map interrupt pin to
-	Slope/Any motion interrupt */
-	if (int_config->int_channel == BMI160_INT_CHANNEL_1) {
-		rslt = bmi160_get_regs(BMI160_INT_MAP_0_ADDR, &data, 1, dev);
-		if (rslt == BMI160_OK) {
-			temp = data & ~BMI160_INT1_SLOPE_MASK;
-			data = temp | ((1 << 2) & BMI160_INT1_SLOPE_MASK);
-			rslt = bmi160_set_regs(BMI160_INT_MAP_0_ADDR, &data, 1, dev);
+	rslt = bmi160_get_regs(BMI160_INT_MAP_1_ADDR, &data, 1, dev);
+
+	if (rslt == BMI160_OK) {
+		temp = data & ~int_mask_lookup_table[int_config->int_type];
+		temp = temp & ~((uint8_t)(int_mask_lookup_table[int_config->int_type] << 4));
+		switch (int_config->int_channel) {
+		case BMI160_INT_CHANNEL_NONE:
+			data = temp;
+			break;
+		case BMI160_INT_CHANNEL_1:
+			data = temp | (uint8_t)((int_mask_lookup_table[int_config->int_type]) << 4);
+			break;
+		case BMI160_INT_CHANNEL_2:
+			data = temp | int_mask_lookup_table[int_config->int_type];
+			break;
+		case BMI160_INT_CHANNEL_BOTH:
+			data = temp | int_mask_lookup_table[int_config->int_type];
+			data = data | (uint8_t)((int_mask_lookup_table[int_config->int_type]) << 4);
+			break;
+		default:
+			rslt = BMI160_E_OUT_OF_RANGE;
 		}
-	} else {
-		rslt = bmi160_get_regs(BMI160_INT_MAP_2_ADDR, &data, 1, dev);
-		if (rslt == BMI160_OK) {
-			temp = data & ~BMI160_INT2_SLOPE_MASK;
-			data = temp | ((1 << 2) & BMI160_INT2_SLOPE_MASK);
-			rslt = bmi160_set_regs(BMI160_INT_MAP_2_ADDR, &data, 1, dev);
-		}
+		if (rslt == BMI160_OK)
+			rslt = bmi160_set_regs(BMI160_INT_MAP_1_ADDR, &data, 1, dev);
 	}
 
 	return rslt;
@@ -3454,7 +3567,7 @@ static int8_t config_any_motion_int_settg(const struct bmi160_int_settg *int_con
 	if (rslt == BMI160_OK) {
 		rslt = disable_sig_motion_int(dev);
 		if (rslt == BMI160_OK) {
-			rslt = map_int_pin_to_sig_any_motion(int_config, dev);
+			rslt = map_feature_interrupt(int_config, dev);
 			if (rslt == BMI160_OK) {
 				rslt = config_any_motion_src(any_motion_int_cfg, dev);
 				if (rslt == BMI160_OK)
@@ -3482,33 +3595,6 @@ static int8_t enable_data_ready_int(const struct bmi160_dev *dev)
 		data = temp | ((1 << 4) & BMI160_DATA_RDY_INT_EN_MASK);
 		/* Writing data to INT ENABLE 1 Address */
 		rslt = bmi160_set_regs(BMI160_INT_ENABLE_1_ADDR, &data, 1, dev);
-	}
-
-	return rslt;
-}
-
-/*!
- * @brief This API maps the data ready interrupt to INT pin as per selection.
- */
-static int8_t map_data_ready_int(const struct bmi160_int_settg *int_config, const struct bmi160_dev *dev)
-{
-	int8_t rslt;
-	uint8_t data = 0;
-	uint8_t temp = 0;
-
-	/* Configure Map register to map interrupt pin to data ready interrupt*/
-	rslt = bmi160_get_regs(BMI160_INT_MAP_1_ADDR, &data, 1, dev);
-
-	if (rslt == BMI160_OK) {
-		if (int_config->int_channel == BMI160_INT_CHANNEL_1) {
-			temp = data & ~BMI160_INT1_DATA_READY_MASK;
-			data = temp | ((1 << 7) & BMI160_INT1_DATA_READY_MASK);
-		} else {
-			temp = data & ~BMI160_INT2_DATA_READY_MASK;
-			data = temp | ((1 << 3) & BMI160_INT2_DATA_READY_MASK);
-		}
-		/* Writing data to Map 1 address */
-		rslt = bmi160_set_regs(BMI160_INT_MAP_1_ADDR, &data, 1, dev);
 	}
 
 	return rslt;
@@ -3562,7 +3648,7 @@ static int8_t config_no_motion_int_settg(const struct bmi160_int_settg *int_conf
 	/* Configure Interrupt pins */
 	rslt = set_intr_pin_config(int_config, dev);
 	if (rslt == BMI160_OK) {
-		rslt = map_int_pin_to_no_motion(int_config, dev);
+		rslt = map_feature_interrupt(int_config, dev);
 		if (rslt == BMI160_OK) {
 			rslt = config_no_motion_data_src(no_mot_int_cfg, dev);
 			if (rslt == BMI160_OK)
@@ -3573,37 +3659,6 @@ static int8_t config_no_motion_int_settg(const struct bmi160_int_settg *int_conf
 	return rslt;
 }
 
-/*!
- * @brief This API maps the INT pin to no motion/slow interrupt.
- */
-static int8_t map_int_pin_to_no_motion(const struct bmi160_int_settg *int_config, const struct bmi160_dev *dev)
-{
-	int8_t rslt;
-	uint8_t temp = 0;
-	uint8_t data = 0;
-
-	/* Configure Int Map register to map interrupt pin
-	 * to No motion interrupt */
-	if (int_config->int_channel == BMI160_INT_CHANNEL_1) {
-		rslt = bmi160_get_regs(BMI160_INT_MAP_0_ADDR, &data, 1, dev);
-		if (rslt == BMI160_OK) {
-			temp = data & ~BMI160_INT1_NO_MOTION_MASK;
-			data = temp | ((1 << 3) & BMI160_INT1_NO_MOTION_MASK);
-			/* Write data to appropriate MAP address */
-			rslt = bmi160_set_regs(BMI160_INT_MAP_0_ADDR, &data, 1, dev);
-		}
-	} else {
-		rslt = bmi160_get_regs(BMI160_INT_MAP_2_ADDR, &data, 1, dev);
-		if (rslt == BMI160_OK) {
-			temp = data & ~BMI160_INT2_NO_MOTION_MASK;
-			data = temp | ((1 << 3) & BMI160_INT2_NO_MOTION_MASK);
-			/* Write data to appropriate MAP address */
-			rslt = bmi160_set_regs(BMI160_INT_MAP_2_ADDR, &data, 1, dev);
-		}
-	}
-
-	return rslt;
-}
 
 /*!
  * @brief This API configure the source of interrupt for no motion.
@@ -3714,7 +3769,7 @@ static int8_t config_sig_motion_int_settg(const struct bmi160_int_settg *int_con
 	/* Configure Interrupt pins */
 	rslt = set_intr_pin_config(int_config, dev);
 	if (rslt == BMI160_OK) {
-		rslt = map_int_pin_to_sig_any_motion(int_config, dev);
+		rslt = map_feature_interrupt(int_config, dev);
 		if (rslt == BMI160_OK) {
 			rslt = config_sig_motion_data_src(sig_mot_int_cfg, dev);
 			if (rslt == BMI160_OK)
@@ -3803,40 +3858,6 @@ static int8_t enable_step_detect_int(const struct bmi160_acc_step_detect_int_cfg
 		/* Writing data to INT ENABLE 2 Address */
 		rslt = bmi160_set_regs(BMI160_INT_ENABLE_2_ADDR, &data, 1, dev);
 	}
-	return rslt;
-}
-
-/*!
- * @brief This API maps the INT pin to low-g or step detector interrupt.
- */
-static int8_t map_int_pin_to_low_step_detect(const struct bmi160_int_settg *int_config, const struct bmi160_dev *dev)
-{
-	int8_t rslt;
-	uint8_t data = 0;
-	uint8_t temp = 0;
-
-
-	/* Configure Int Map register to map interrupt pin to step detector */
-	if (int_config->int_channel == BMI160_INT_CHANNEL_1) {
-
-		rslt = bmi160_get_regs(BMI160_INT_MAP_0_ADDR, &data, 1, dev);
-		if (rslt == BMI160_OK) {
-			temp = data & ~BMI160_INT1_LOW_STEP_DETECT_MASK;
-			data = temp | (1 & BMI160_INT1_LOW_STEP_DETECT_MASK);
-			/* Write data to MAP address */
-			rslt = bmi160_set_regs(BMI160_INT_MAP_0_ADDR, &data, 1, dev);
-		}
-	} else {
-
-		rslt = bmi160_get_regs(BMI160_INT_MAP_2_ADDR, &data, 1, dev);
-		if (rslt == BMI160_OK) {
-			temp = data & ~BMI160_INT2_LOW_STEP_DETECT_MASK;
-			data = temp | (1 & BMI160_INT2_LOW_STEP_DETECT_MASK);
-			/* Write data to MAP address */
-			rslt = bmi160_set_regs(BMI160_INT_MAP_2_ADDR, &data, 1, dev);
-		}
-	}
-
 	return rslt;
 }
 
@@ -3932,56 +3953,12 @@ static int8_t config_tap_int_settg(const struct bmi160_int_settg *int_config,
 	/* Configure Interrupt pins */
 	rslt = set_intr_pin_config(int_config, dev);
 	if (rslt == BMI160_OK) {
-		rslt = map_int_pin_to_tap(int_config, dev);
+		rslt = map_feature_interrupt(int_config, dev);
 		if (rslt == BMI160_OK) {
 			rslt = config_tap_data_src(tap_int_cfg, dev);
 			if (rslt == BMI160_OK)
 				rslt = config_tap_param(int_config, tap_int_cfg, dev);
 		}
-	}
-
-	return rslt;
-}
-
-/*!
- * @brief This API maps the INT pin to single or double tap interrupt.
- */
-static int8_t map_int_pin_to_tap(const struct bmi160_int_settg *int_config, const struct bmi160_dev *dev)
-{
-	int8_t rslt;
-	uint8_t data = 0;
-	uint8_t temp = 0;
-
-
-	/* Configure Map register to map interrupt pin to
-	single or double tap interrupt*/
-	if (int_config->int_channel == BMI160_INT_CHANNEL_1) {
-		rslt = bmi160_get_regs(BMI160_INT_MAP_0_ADDR, &data, 1, dev);
-		if (rslt == BMI160_OK) {
-			if (int_config->int_type == BMI160_ACC_SINGLE_TAP_INT) {
-				temp = data & ~BMI160_INT1_SINGLE_TAP_MASK;
-				data = temp | ((1 << 5) & BMI160_INT1_SINGLE_TAP_MASK);
-			} else {
-				temp = data & ~BMI160_INT1_DOUBLE_TAP_MASK;
-				data = temp | ((1 << 4) & BMI160_INT1_DOUBLE_TAP_MASK);
-			}
-
-		}
-		/* Write data to MAP address */
-		rslt = bmi160_set_regs(BMI160_INT_MAP_0_ADDR, &data, 1, dev);
-	} else {
-		rslt = bmi160_get_regs(BMI160_INT_MAP_2_ADDR, &data, 1, dev);
-		if (rslt == BMI160_OK) {
-			if (int_config->int_type == BMI160_ACC_SINGLE_TAP_INT) {
-				temp = data & ~BMI160_INT2_SINGLE_TAP_MASK;
-				data = temp | ((1 << 5) & BMI160_INT2_SINGLE_TAP_MASK);
-			} else {
-				temp = data & ~BMI160_INT2_DOUBLE_TAP_MASK;
-				data = temp | ((1 << 4) & BMI160_INT2_DOUBLE_TAP_MASK);
-			}
-		}
-		/* Write data to MAP address */
-		rslt = bmi160_set_regs(BMI160_INT_MAP_2_ADDR, &data, 1, dev);
 	}
 
 	return rslt;
@@ -4075,6 +4052,7 @@ static int8_t config_sec_if(const struct bmi160_dev *dev)
 	/* set the aux power mode to normal*/
 	rslt = bmi160_set_regs(BMI160_COMMAND_REG_ADDR, &cmd, 1, dev);
 	if (rslt == BMI160_OK) {
+		dev->delay_ms(60);
 		rslt = bmi160_get_regs(BMI160_IF_CONF_ADDR, &if_conf, 1, dev);
 		if_conf |= (uint8_t)(1 << 5);
 		if (rslt == BMI160_OK)
@@ -4216,35 +4194,6 @@ static int8_t enable_orient_int(const struct bmi160_acc_orient_int_cfg *orient_i
 	return rslt;
 }
 
-/*!
- * @brief This API maps the INT pin to orientation interrupt.
- */
-static int8_t map_int_pin_to_orient(const struct bmi160_int_settg *int_config, const struct bmi160_dev *dev)
-{
-	int8_t rslt;
-	uint8_t data = 0;
-	uint8_t temp = 0;
-
-	/* Configure Int Map register to map interrupt pin
-	 * to orientation interrupt */
-	if (int_config->int_channel == BMI160_INT_CHANNEL_1) {
-		rslt = bmi160_get_regs(BMI160_INT_MAP_0_ADDR, &data, 1, dev);
-		if (rslt == BMI160_OK) {
-			temp = data & ~BMI160_INT1_ORIENT_MASK;
-			data = temp | ((1 << 6) & BMI160_INT1_ORIENT_MASK);
-			rslt = bmi160_set_regs(BMI160_INT_MAP_0_ADDR, &data, 1, dev);
-		}
-	} else {
-		rslt = bmi160_get_regs(BMI160_INT_MAP_2_ADDR, &data, 1, dev);
-		if (rslt == BMI160_OK) {
-			temp = data & ~BMI160_INT2_ORIENT_MASK;
-			data = temp | ((1 << 6) & BMI160_INT2_ORIENT_MASK);
-			rslt = bmi160_set_regs(BMI160_INT_MAP_2_ADDR, &data, 1, dev);
-		}
-	}
-
-	return rslt;
-}
 
 /*!
  * @brief This API configure the necessary setting of orientation interrupt.
@@ -4312,34 +4261,6 @@ static int8_t enable_flat_int(const struct bmi160_acc_flat_detect_int_cfg *flat_
 	return rslt;
 }
 
-/*!
- * @brief This API maps the INT pin to flat interrupt.
- */
-static int8_t map_int_pin_to_flat(const struct bmi160_int_settg *int_config, const struct bmi160_dev *dev)
-{
-	int8_t rslt;
-	uint8_t data = 0;
-	uint8_t temp = 0;
-
-	/* Configure Map register to map interrupt pin to flat interrupt*/
-	if (int_config->int_channel == BMI160_INT_CHANNEL_1) {
-		rslt = bmi160_get_regs(BMI160_INT_MAP_0_ADDR, &data, 1, dev);
-		if (rslt == BMI160_OK) {
-			temp = data & ~BMI160_INT1_FLAT_MASK;
-			data = temp | ((1 << 7) & BMI160_INT1_FLAT_MASK);
-			rslt = bmi160_set_regs(BMI160_INT_MAP_0_ADDR, &data, 1, dev);
-		}
-	} else {
-		rslt = bmi160_get_regs(BMI160_INT_MAP_2_ADDR, &data, 1, dev);
-		if (rslt == BMI160_OK) {
-			temp = data & ~BMI160_INT2_FLAT_MASK;
-			data = temp | ((1 << 7) & BMI160_INT2_FLAT_MASK);
-			rslt = bmi160_set_regs(BMI160_INT_MAP_2_ADDR, &data, 1, dev);
-		}
-	}
-
-	return rslt;
-}
 
 /*!
  * @brief This API configure the necessary setting of flat interrupt.
@@ -4478,35 +4399,6 @@ static int8_t enable_high_g_int(const struct bmi160_acc_high_g_int_cfg *high_g_i
 
 		/* write data to Int Enable 0 register */
 		rslt = bmi160_set_regs(BMI160_INT_ENABLE_1_ADDR, &data, 1, dev);
-	}
-
-	return rslt;
-}
-
-/*!
- * @brief This API maps the INT pin to High-g interrupt.
- */
-static int8_t map_int_pin_to_high_g(const struct bmi160_int_settg *int_config, const struct bmi160_dev *dev)
-{
-	int8_t rslt;
-	uint8_t data = 0;
-	uint8_t temp = 0;
-
-	/* Configure Map register to map interrupt pin to high-g interrupt*/
-	if (int_config->int_channel == BMI160_INT_CHANNEL_1) {
-		rslt = bmi160_get_regs(BMI160_INT_MAP_0_ADDR, &data, 1, dev);
-		if (rslt == BMI160_OK) {
-			temp = data & ~BMI160_INT1_HIGH_G_MASK;
-			data = temp | ((1 << 1) & BMI160_INT1_HIGH_G_MASK);
-			rslt = bmi160_set_regs(BMI160_INT_MAP_0_ADDR, &data, 1, dev);
-		}
-	} else {
-		rslt = bmi160_get_regs(BMI160_INT_MAP_2_ADDR, &data, 1, dev);
-		if (rslt == BMI160_OK) {
-			temp = data & ~BMI160_INT2_HIGH_G_MASK;
-			data = temp | ((1 << 1) & BMI160_INT2_HIGH_G_MASK);
-			rslt = bmi160_set_regs(BMI160_INT_MAP_2_ADDR, &data, 1, dev);
-		}
 	}
 
 	return rslt;
@@ -4857,7 +4749,7 @@ static int8_t set_fifo_full_int(const struct bmi160_int_settg *int_config, const
 			/* Configure Interrupt pins */
 			rslt = set_intr_pin_config(int_config, dev);
 			if (rslt == BMI160_OK)
-				rslt = map_int_pin_to_fifo_full(int_config, dev);
+				rslt = map_hardware_interrupt(int_config, dev);
 		}
 	}
 	return rslt;
@@ -4883,29 +4775,6 @@ static int8_t enable_fifo_full_int(const struct bmi160_int_settg *int_config, co
 }
 
 /*!
- * @brief This API maps the INT pin to FIFO FULL interrupt.
- */
-static int8_t map_int_pin_to_fifo_full(const struct bmi160_int_settg *int_config, const struct bmi160_dev *dev)
-{
-	int8_t rslt;
-	uint8_t data = 0;
-	/* Configure Map register to map interrupt pin
-	 * to fifo-full interrupt*/
-	rslt = bmi160_get_regs(BMI160_INT_MAP_1_ADDR, &data, 1, dev);
-	if (rslt == BMI160_OK) {
-		if (int_config->int_channel == BMI160_INT_CHANNEL_1)
-			data = BMI160_SET_BITS(data, BMI160_FIFO_FULL_INT_PIN1, 1);
-		else
-			data = BMI160_SET_BITS(data, BMI160_FIFO_FULL_INT_PIN2, 1);
-
-		/* Writing data to Map 1 address */
-		rslt = bmi160_set_regs(BMI160_INT_MAP_1_ADDR, &data, 1, dev);
-	}
-
-	return rslt;
-}
-
-/*!
  *  @brief This API sets FIFO watermark interrupt of the sensor.The FIFO
  *  watermark interrupt is fired, when the FIFO fill level is above a fifo
  *  watermark.
@@ -4923,7 +4792,7 @@ static int8_t set_fifo_watermark_int(const struct bmi160_int_settg *int_config, 
 			/* Configure Interrupt pins */
 			rslt = set_intr_pin_config(int_config, dev);
 			if (rslt == BMI160_OK)
-				rslt = map_int_pin_to_fifo_wtm(int_config, dev);
+				rslt = map_hardware_interrupt(int_config, dev);
 		}
 	}
 
@@ -4950,28 +4819,6 @@ static int8_t enable_fifo_wtm_int(const struct bmi160_int_settg *int_config, con
 }
 
 /*!
- * @brief This API maps the INT pin to FIFO watermark interrupt.
- */
-static int8_t map_int_pin_to_fifo_wtm(const struct bmi160_int_settg *int_config, const struct bmi160_dev *dev)
-{
-	int8_t rslt;
-	uint8_t data = 0;
-	/* Configure Map register to map interrupt pin
-	 * to fifo-full interrupt*/
-	rslt = bmi160_get_regs(BMI160_INT_MAP_1_ADDR, &data, 1, dev);
-	if (rslt == BMI160_OK) {
-		if (int_config->int_channel == BMI160_INT_CHANNEL_1)
-			data = BMI160_SET_BITS(data, BMI160_FIFO_WTM_INT_PIN1, 1);
-		else
-			data = BMI160_SET_BITS(data, BMI160_FIFO_WTM_INT_PIN2, 1);
-
-		/* Writing data to Map 1 address */
-		rslt = bmi160_set_regs(BMI160_INT_MAP_1_ADDR, &data, 1, dev);
-	}
-
-	return rslt;
-}
-/*!
  *  @brief This API is used to reset the FIFO related configurations
  *  in the fifo_frame structure.
  */
@@ -4981,6 +4828,7 @@ static void reset_fifo_data_structure(const struct bmi160_dev *dev)
 	internal data structures*/
 	dev->fifo->accel_byte_start_idx = 0;
 	dev->fifo->gyro_byte_start_idx = 0;
+	dev->fifo->aux_byte_start_idx = 0;
 	dev->fifo->sensor_time = 0;
 	dev->fifo->skipped_frame_count = 0;
 }
@@ -5431,6 +5279,220 @@ static void extract_gyro_header_mode(struct bmi160_sensor_data *gyro_data, uint8
 	*gyro_length = gyro_index;
 	/*Update the gyro frame index*/
 	dev->fifo->gyro_byte_start_idx = data_index;
+}
+
+/*!
+ *  @brief This API computes the number of bytes of aux FIFO data
+ *  which is to be parsed in header-less mode
+ */
+static void get_aux_len_to_parse(uint16_t *data_index, uint16_t *data_read_length, const uint8_t *aux_frame_count,
+					const struct bmi160_dev *dev)
+{
+	/* Data start index */
+	*data_index = dev->fifo->gyro_byte_start_idx;
+
+	if (dev->fifo->fifo_data_enable == BMI160_FIFO_M_ENABLE) {
+		*data_read_length = (*aux_frame_count) * BMI160_FIFO_M_LENGTH;
+	} else if (dev->fifo->fifo_data_enable == BMI160_FIFO_M_A_ENABLE) {
+		*data_read_length = (*aux_frame_count) * BMI160_FIFO_MA_LENGTH;
+	} else if (dev->fifo->fifo_data_enable == BMI160_FIFO_M_G_ENABLE) {
+		*data_read_length = (*aux_frame_count) * BMI160_FIFO_MG_LENGTH;
+	} else if (dev->fifo->fifo_data_enable == BMI160_FIFO_M_G_A_ENABLE) {
+		*data_read_length = (*aux_frame_count) * BMI160_FIFO_MGA_LENGTH;
+	} else {
+		/* When aux is not enabled ,there will be no aux data.
+		 * so we update the data index as complete */
+		*data_index = dev->fifo->length;
+	}
+
+	if (*data_read_length > dev->fifo->length) {
+		/* Handling the case where more data is requested
+		 * than that is available */
+		*data_read_length = dev->fifo->length;
+	}
+}
+
+/*!
+ *  @brief This API is used to parse the aux's data from the
+ *  FIFO data in both header mode and header-less mode.
+ *  It updates the idx value which is used to store the index of
+ *  the current data byte which is parsed
+ */
+static void unpack_aux_frame(struct bmi160_aux_data *aux_data, uint16_t *idx, uint8_t *aux_index, uint8_t frame_info,
+				const struct bmi160_dev *dev)
+{
+	switch (frame_info) {
+
+	case BMI160_FIFO_HEAD_M:
+	case BMI160_FIFO_M_ENABLE:
+		/* Partial read, then skip the data */
+		if ((*idx + BMI160_FIFO_M_LENGTH) > dev->fifo->length) {
+			/* Update the data index as complete */
+			*idx = dev->fifo->length;
+			break;
+		}
+		/* Unpack the data array into structure instance */
+		unpack_aux_data(&aux_data[*aux_index], *idx, dev);
+		/* Move the data index */
+		*idx = *idx + BMI160_FIFO_M_LENGTH;
+		(*aux_index)++;
+		break;
+
+	case BMI160_FIFO_HEAD_M_A:
+	case BMI160_FIFO_M_A_ENABLE:
+		/* Partial read, then skip the data */
+		if ((*idx + BMI160_FIFO_MA_LENGTH) > dev->fifo->length) {
+			/* Update the data index as complete */
+			*idx = dev->fifo->length;
+			break;
+		}
+		/* Unpack the data array into structure instance */
+		unpack_aux_data(&aux_data[*aux_index], *idx, dev);
+		/* Move the data index */
+		*idx = *idx + BMI160_FIFO_MA_LENGTH;
+		(*aux_index)++;
+		break;
+
+
+	case BMI160_FIFO_HEAD_M_G:
+	case BMI160_FIFO_M_G_ENABLE:
+		/* Partial read, then skip the data */
+		if ((*idx + BMI160_FIFO_MG_LENGTH) > dev->fifo->length) {
+			/* Update the data index as complete */
+			*idx = dev->fifo->length;
+			break;
+		}
+		/* Unpack the data array into structure instance */
+		unpack_aux_data(&aux_data[*aux_index], *idx, dev);
+		/* Move the data index */
+		(*idx) = (*idx) + BMI160_FIFO_MG_LENGTH;
+		(*aux_index)++;
+		break;
+
+	case BMI160_FIFO_HEAD_M_G_A:
+	case BMI160_FIFO_M_G_A_ENABLE:
+		/*Partial read, then skip the data*/
+		if ((*idx + BMI160_FIFO_MGA_LENGTH) > dev->fifo->length) {
+			/* Update the data index as complete */
+			*idx = dev->fifo->length;
+			break;
+		}
+		/* Unpack the data array into structure instance */
+		unpack_aux_data(&aux_data[*aux_index], *idx, dev);
+		/*Move the data index*/
+		*idx = *idx + BMI160_FIFO_MGA_LENGTH;
+		(*aux_index)++;
+		break;
+
+	case BMI160_FIFO_HEAD_G:
+	case BMI160_FIFO_G_ENABLE:
+		/* Move the data index */
+		(*idx) = (*idx) + BMI160_FIFO_G_LENGTH;
+		break;
+
+	case BMI160_FIFO_HEAD_G_A:
+	case BMI160_FIFO_G_A_ENABLE:
+		/* Move the data index */
+		*idx = *idx + BMI160_FIFO_GA_LENGTH;
+		break;
+
+	case BMI160_FIFO_HEAD_A:
+	case BMI160_FIFO_A_ENABLE:
+		/* Move the data index */
+		*idx = *idx + BMI160_FIFO_A_LENGTH;
+		break;
+
+	default:
+		break;
+	}
+
+}
+
+/*!
+ *  @brief This API is used to parse the aux data from the
+ *  FIFO data and store it in the instance of the structure bmi160_aux_data.
+ */
+static void unpack_aux_data(struct bmi160_aux_data *aux_data, uint16_t data_start_index,
+				const struct bmi160_dev *dev)
+{
+	/* Aux data bytes */
+	aux_data->data[0] = dev->fifo->data[data_start_index++];
+	aux_data->data[1] = dev->fifo->data[data_start_index++];
+	aux_data->data[2] = dev->fifo->data[data_start_index++];
+	aux_data->data[3] = dev->fifo->data[data_start_index++];
+	aux_data->data[4] = dev->fifo->data[data_start_index++];
+	aux_data->data[5] = dev->fifo->data[data_start_index++];
+	aux_data->data[6] = dev->fifo->data[data_start_index++];
+	aux_data->data[7] = dev->fifo->data[data_start_index++];
+}
+
+/*!
+ *  @brief This API is used to parse the aux data from the
+ *  FIFO data in header mode.
+ */
+static void extract_aux_header_mode(struct bmi160_aux_data *aux_data, uint8_t *aux_length,
+					const struct bmi160_dev *dev)
+{
+	uint8_t frame_header = 0;
+	uint16_t data_index;
+	uint8_t aux_index = 0;
+
+	for (data_index = dev->fifo->aux_byte_start_idx; data_index < dev->fifo->length;) {
+		/* extracting Frame header */
+		frame_header = (dev->fifo->data[data_index] & BMI160_FIFO_TAG_INTR_MASK);
+		/*Index is moved to next byte where the data is starting*/
+		data_index++;
+
+		switch (frame_header) {
+			/* Aux frame */
+		case BMI160_FIFO_HEAD_M:
+		case BMI160_FIFO_HEAD_M_A:
+		case BMI160_FIFO_HEAD_M_G:
+		case BMI160_FIFO_HEAD_M_G_A:
+			unpack_aux_frame(aux_data, &data_index, &aux_index, frame_header, dev);
+			break;
+		case BMI160_FIFO_HEAD_G:
+			move_next_frame(&data_index, BMI160_FIFO_G_LENGTH, dev);
+			break;
+		case BMI160_FIFO_HEAD_G_A:
+			move_next_frame(&data_index, BMI160_FIFO_GA_LENGTH, dev);
+			break;
+		case BMI160_FIFO_HEAD_A:
+			move_next_frame(&data_index, BMI160_FIFO_A_LENGTH, dev);
+			break;
+			/* Sensor time frame */
+		case BMI160_FIFO_HEAD_SENSOR_TIME:
+			unpack_sensortime_frame(&data_index, dev);
+			break;
+			/* Skip frame */
+		case BMI160_FIFO_HEAD_SKIP_FRAME:
+			unpack_skipped_frame(&data_index, dev);
+			break;
+			/* Input config frame */
+		case BMI160_FIFO_HEAD_INPUT_CONFIG:
+			move_next_frame(&data_index, 1, dev);
+			break;
+		case BMI160_FIFO_HEAD_OVER_READ:
+			/* Update the data index as complete in case
+			 * of over read */
+			data_index = dev->fifo->length;
+			break;
+		default:
+			/* Update the data index as complete in case of
+			 * getting other headers like 0x00 */
+			data_index = dev->fifo->length;
+			break;
+		}
+		if (*aux_length == aux_index) {
+			/*Number of frames to read completed*/
+			break;
+		}
+	}
+
+	/* Update number of aux data read */
+	*aux_length = aux_index;
+	/* Update the aux frame index */
+	dev->fifo->aux_byte_start_idx = data_index;
 }
 
 /*!

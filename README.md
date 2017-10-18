@@ -7,9 +7,9 @@ The sensor driver package includes bmi160.h, bmi160.c and bmi160_defs.h files
 ## Version
 File          | Version | Date
 --------------|---------|---------------
-bmi160.c      |   3.6.1 |   23 Aug 2017
-bmi160.h      |   3.6.1 |   23 Aug 2017
-bmi160_defs.h |   3.6.1 |   23 Aug 2017
+bmi160.c      |   3.7.2 |   16 Oct 2017
+bmi160.h      |   3.7.2 |   16 Oct 2017
+bmi160_defs.h |   3.7.2 |   16 Oct 2017
 
 ## Integration details
 * Integrate bmi160.h, bmi160_defs.h and bmi160.c file in to your project.
@@ -192,7 +192,6 @@ int_config.int_channel = BMI160_INT_CHANNEL_1;// Interrupt channel/pin 1
 
 /* Select the Interrupt type */
 int_config.int_type = BMI160_ACC_ANY_MOTION_INT;// Choosing Any motion interrupt
-
 /* Select the interrupt channel/pin settings */
 int_config.int_pin_sett.output_en = BMI160_ENABLE;// Enabling interrupt pins to act as output pin
 int_config.int_pin_sett.output_mode = BMI160_DISABLE;// Choosing push-pull mode for interrupt pin
@@ -224,7 +223,6 @@ int_config.int_channel = BMI160_INT_CHANNEL_1;// Interrupt channel/pin 1
 
 /* Select the Interrupt type */
 int_config.int_type = BMI160_ACC_FLAT_INT;// Choosing flat interrupt
-
 /* Select the interrupt channel/pin settings */
 int_config.int_pin_sett.output_en = BMI160_ENABLE;// Enabling interrupt pins to act as output pin
 int_config.int_pin_sett.output_mode = BMI160_DISABLE;// Choosing push-pull mode for interrupt pin
@@ -256,7 +254,6 @@ int_config.int_channel = BMI160_INT_CHANNEL_1;// Interrupt channel/pin 1
 
 /* Select the Interrupt type */
 int_config.int_type = BMI160_STEP_DETECT_INT;// Choosing Step Detector interrupt
-
 /* Select the interrupt channel/pin settings */
 int_config.int_pin_sett.output_en = BMI160_ENABLE;// Enabling interrupt pins to act as output pin
 int_config.int_pin_sett.output_mode = BMI160_DISABLE;// Choosing push-pull mode for interrupt pin
@@ -293,6 +290,33 @@ uint16_t step_count = 0;//stores the step counter value
 
 rslt = bmi160_read_step_counter(&step_count,  &sensor);
 ```
+
+### Unmapping Interrupt
+#### Example for unmapping Step Detector Interrupt
+``` c
+struct bmi160_intr_sett int_config;
+
+/* Deselect the Interrupt channel/pin */
+int_config.int_channel = BMI160_INT_CHANNEL_NONE;
+/* Select the Interrupt type */
+int_config.int_type = BMI160_STEP_DETECT_INT;// Choosing Step Detector interrupt
+/* Set the Step Detector interrupt */
+bmi160_set_intr_config(&int_config, &sensor); /* sensor is an instance of the structure bmi160_dev */
+```
+
+### Reading interrupt status
+#### Example for reading interrupt status for step detector
+``` c
+union bmi160_int_status interrupt;
+enum bmi160_int_status_sel int_status_sel;
+
+/* Interrupt status selection to read all interrupts */
+int_status_sel = BMI160_INT_STATUS_ALL;
+rslt = bmi160_get_int_status(int_status_sel, &interrupt, &sensor);
+if (interrupt.bit.step)
+	printf("Step detector interrupt occured\n");
+```
+
 ### Configuring the auxiliary sensor BMM150
 It is assumed that secondary interface of bmi160 has external pull-up resistor in order to access the auxiliary sensor bmm150.
 
@@ -391,7 +415,8 @@ which helps in creating less latency fusion data
 
 ```
 /* Initialize the Auxiliary BMM150 following the above code 
-   until setting the power mode and preset mode */
+ * until setting the power mode (Set the power mode as forced mode)
+ * and preset mode */
 
 	/* In BMM150 Mag data starts from register address 0x42 */
 	uint8_t aux_addr = 0x42;
@@ -400,13 +425,13 @@ which helps in creating less latency fusion data
 	
 	uint8_t index;
 		
-	/* Set the auxiliary sensor to auto mode */
-	rslt = bmi160_set_aux_auto_mode(&aux_addr, &sensor);
-	
 	/* Configure the Auxiliary sensor either in auto/manual modes and set the 
 	polling frequency for the Auxiliary interface */	
 	sensor.aux_cfg.aux_odr = 8; /* Represents polling rate in 100 Hz*/
 	rslt = bmi160_config_aux_mode(&sensor)
+	
+	/* Set the auxiliary sensor to auto mode */
+	rslt = bmi160_set_aux_auto_mode(&aux_addr, &sensor);
 
 	/* Reading data from BMI160 data registers */
 	rslt = bmi160_read_aux_data_auto_mode(mag_data, &sensor);
@@ -414,17 +439,136 @@ which helps in creating less latency fusion data
 	printf("\n RAW DATA ");
 	for(index = 0 ; index < 8 ; index++)
 	{
-		printf("\n MAG DATA[index] : %d ", index,mag_data[index]);
+		printf("\n MAG DATA[%d] : %d ", index, mag_data[index]);
 	}
 	
 	/* Compensating the raw mag data available from the BMM150 API */
-	rslt = bmm150_aux_mag_data(mag_data,&bmm150);
+	rslt = bmm150_aux_mag_data(mag_data, &bmm150);
 	
 	printf("\n COMPENSATED DATA ");
 	printf("\n MAG DATA X : %d Y : %d Z : %d", bmm150.data.x, bmm150.data.y, bmm150.data.z);
 	
 
 ```
+
+### Auxiliary FIFO data parsing
+The Auxiliary sensor data can be stored in FIFO , Here we demonstrate an example for 
+using the Bosch Magnetometer sensor BMM150 and storing its data in FIFO
+
+```
+/* Initialize the Aux BMM150 following the above 
+ * code and by creating the Wrapper functions */
+
+	int8_t rslt = 0;
+	uint8_t aux_instance = 0;
+	uint16_t fifo_cnt = 0;
+	uint8_t auto_mode_addr;
+	uint8_t i;
+
+	/* Setup and configure the FIFO buffer */
+	/* Declare memory to store the raw FIFO buffer information */
+	uint8_t fifo_buff[1000] = {0};
+
+	/* Modify the FIFO buffer instance and link to the device instance */
+	struct bmi160_fifo_frame fifo_frame;
+	fifo_frame.data = fifo_buff;
+	fifo_frame.length = 1000;
+	dev->fifo = &fifo_frame;
+
+	/* Declare instances of the sensor data structure to store the parsed FIFO data */
+	struct bmi160_aux_data aux_data[112]; //1000 / 9 bytes per frame ~ 111 data frames
+
+	rslt = bmi160_init(dev);
+	printf("\n BMI160 chip ID is : %d ",dev->chip_id);
+
+	rslt = bmi160_aux_init(dev);
+
+	rslt = bmm150_init(&bmm150);
+	printf("\n BMM150 CHIP ID : %d",bmm150.chip_id);
+
+	bmm150.settings.preset_mode = BMM150_PRESETMODE_LOWPOWER;
+	rslt = bmm150_set_presetmode(&bmm150);
+
+	bmm150.settings.pwr_mode = BMM150_FORCED_MODE;
+	rslt = bmm150_set_op_mode(&bmm150);
+
+	/* Enter the data register of BMM150 to "auto_mode_addr" here it is 0x42 */
+	auto_mode_addr = 0x42;
+	printf("\n ENTERING AUX. AUTO MODE ");
+	dev->aux_cfg.aux_odr = BMI160_AUX_ODR_25HZ;
+	rslt = bmi160_set_aux_auto_mode(&auto_mode_addr, dev);
+
+
+	/* Disable other FIFO settings */
+	rslt = bmi160_set_fifo_config(BMI160_FIFO_CONFIG_1_MASK , BMI160_DISABLE, dev);
+
+	/* Enable the required FIFO settings */
+	rslt = bmi160_set_fifo_config(BMI160_FIFO_AUX | BMI160_FIFO_HEADER, BMI160_ENABLE, dev);
+
+	/* Delay for the FIFO to get filled */
+	dev->delay_ms(400);
+
+
+	printf("\n FIFO DATA REQUESTED (in bytes): %d",dev->fifo->length);
+	rslt = bmi160_get_fifo_data(dev);
+	printf("\n FIFO DATA AVAILABLE (in bytes): %d",dev->fifo->length);
+
+	/* Print the raw FIFO data obtained */
+	for(fifo_cnt = 0; fifo_cnt < dev->fifo->length ; fifo_cnt++) {
+		printf("\n FIFO DATA [%d] IS : %x  ",fifo_cnt ,dev->fifo->data[fifo_cnt]);
+	}
+
+	printf("\n\n----------------------------------------------------\n");
+
+	/* Set the number of required sensor data instances */
+	aux_instance = 150;
+
+	/* Extract the aux data , 1frame = 8 data bytes */
+	printf("\n AUX DATA REQUESTED TO BE EXTRACTED (in frames): %d",aux_instance);
+	rslt = bmi160_extract_aux(aux_data, &aux_instance, dev);
+	printf("\n AUX DATA ACTUALLY EXTRACTED (in frames): %d",aux_instance);
+
+	/* Printing the raw aux data */
+	for (i = 0; i < aux_instance; i++) {
+		printf("\n Aux data[%d] : %x",i,aux_data[i].data[0]);
+		printf("\n Aux data[%d] : %x",i,aux_data[i].data[1]);
+		printf("\n Aux data[%d] : %x",i,aux_data[i].data[2]);
+		printf("\n Aux data[%d] : %x",i,aux_data[i].data[3]);
+		printf("\n Aux data[%d] : %x",i,aux_data[i].data[4]);
+		printf("\n Aux data[%d] : %x",i,aux_data[i].data[5]);
+		printf("\n Aux data[%d] : %x",i,aux_data[i].data[6]);
+		printf("\n Aux data[%d] : %x",i,aux_data[i].data[7]);
+	}
+
+	printf("\n\n----------------------------------------------------\n");
+
+	/* Compensate the raw mag data using BMM150 API */
+	for (i = 0; i < aux_instance; i++) {
+		printf("\n----------------------------------------------------");
+		printf("\n Aux data[%d] : %x , %x , %x , %x , %x , %x , %x , %x",i
+					,aux_data[i].data[0],aux_data[i].data[1]
+					,aux_data[i].data[2],aux_data[i].data[3]
+					,aux_data[i].data[4],aux_data[i].data[5]
+					,aux_data[i].data[6],aux_data[i].data[7]);
+
+		/* Compensated mag data using BMM150 API */
+		rslt = bmm150_aux_mag_data(&aux_data[i].data[0], &bmm150);
+
+		/* Printing the  Compensated mag data */
+		if (rslt == BMM150_OK) {
+			printf("\n MAG DATA COMPENSATION USING BMM150 APIs");
+			printf("\n COMPENSATED DATA ");
+			printf("\n MAG DATA X : %d	Y : %d      Z : %d"
+				, bmm150.data.x, bmm150.data.y, bmm150.data.z);
+
+		} else {
+			printf("\n MAG DATA COMPENSATION IN BMM150 API is FAILED ");
+		}
+		printf("\n----------------------------------------------------\n");
+	}
+
+```
+
 ## Self-test  
 #### Example for performing accel self test
 ```
@@ -643,5 +787,7 @@ int8_t write_offsets_nvm(struct bmi160_dev *dev)
 	return rslt;
 }
 ```
+
+
 
 ## Copyright (C) 2016 - 2017 Bosch Sensortec GmbH

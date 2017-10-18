@@ -40,8 +40,8 @@
  * patent rights of the copyright holder.
  *
  * @file    bmi160_defs.h
- * @date    23 Aug 2017
- * @version 3.6.1
+ * @date    16 Oct 2017
+ * @version 3.7.2
  * @brief
  *
  */
@@ -290,6 +290,7 @@ extern "C"
 #define BMI160_GYRO_DATA_ADDR		UINT8_C(0x0C)
 #define BMI160_ACCEL_DATA_ADDR		UINT8_C(0x12)
 #define BMI160_STATUS_ADDR		UINT8_C(0x1B)
+#define BMI160_INT_STATUS_ADDR		UINT8_C(0x1C)
 #define BMI160_FIFO_LENGTH_ADDR		UINT8_C(0x22)
 #define BMI160_FIFO_DATA_ADDR		UINT8_C(0x24)
 #define BMI160_ACCEL_CONFIG_ADDR	UINT8_C(0x40)
@@ -706,6 +707,95 @@ typedef int8_t (*bmi160_com_fptr_t)(uint8_t dev_addr, uint8_t reg_addr,
 typedef void (*bmi160_delay_fptr_t)(uint32_t period);
 
 /*************************** Data structures *********************************/
+/*!
+ * @brief bmi160 interrupt status selection enum.
+ */
+enum bmi160_int_status_sel {
+	BMI160_INT_STATUS_0 = 1,
+	BMI160_INT_STATUS_1 = 2,
+	BMI160_INT_STATUS_2 = 4,
+	BMI160_INT_STATUS_3 = 8,
+	BMI160_INT_STATUS_ALL = 15
+};
+
+/*!
+ * @brief bmi160 interrupt status bits structure
+ */
+struct bmi160_int_status_bits {
+#if LITTLE_ENDIAN == 1
+	uint32_t step :1;
+	uint32_t sigmot :1;
+	uint32_t anym :1;
+	/* pmu trigger will be handled later */
+	uint32_t pmu_trigger_reserved :1;
+	uint32_t d_tap :1;
+	uint32_t s_tap :1;
+	uint32_t orient :1;
+	uint32_t flat_int :1;
+	uint32_t reserved :2;
+	uint32_t high_g :1;
+	uint32_t low_g :1;
+	uint32_t drdy :1;
+	uint32_t ffull :1;
+	uint32_t fwm :1;
+	uint32_t nomo :1;
+	uint32_t anym_first_x :1;
+	uint32_t anym_first_y :1;
+	uint32_t anym_first_z :1;
+	uint32_t anym_sign :1;
+	uint32_t tap_first_x :1;
+	uint32_t tap_first_y :1;
+	uint32_t tap_first_z :1;
+	uint32_t tap_sign :1;
+	uint32_t high_first_x :1;
+	uint32_t high_first_y :1;
+	uint32_t high_first_z :1;
+	uint32_t high_sign :1;
+	uint32_t orient_1_0 :2;
+	uint32_t orient_2 :1;
+	uint32_t flat :1;
+#elif BIG_ENDIAN == 1
+	uint32_t high_first_x :1;
+	uint32_t high_first_y :1;
+	uint32_t high_first_z :1;
+	uint32_t high_sign :1;
+	uint32_t orient_1_0 :2;
+	uint32_t orient_2 :1;
+	uint32_t flat :1;
+	uint32_t anym_first_x :1;
+	uint32_t anym_first_y :1;
+	uint32_t anym_first_z :1;
+	uint32_t anym_sign :1;
+	uint32_t tap_first_x :1;
+	uint32_t tap_first_y :1;
+	uint32_t tap_first_z :1;
+	uint32_t tap_sign :1;
+	uint32_t reserved :2;
+	uint32_t high_g :1;
+	uint32_t low_g :1;
+	uint32_t drdy :1;
+	uint32_t ffull :1;
+	uint32_t fwm :1;
+	uint32_t nomo :1;
+	uint32_t step :1;
+	uint32_t sigmot :1;
+	uint32_t anym :1;
+	/* pmu trigger will be handled later */
+	uint32_t pmu_trigger_reserved :1;
+	uint32_t d_tap :1;
+	uint32_t s_tap :1;
+	uint32_t orient :1;
+	uint32_t flat_int :1;
+#endif
+};
+
+/*!
+ * @brief bmi160 interrupt status structure
+ */
+union bmi160_int_status {
+	uint8_t data[4];
+	struct bmi160_int_status_bits bit;
+};
 
 /*!
  * @brief bmi160 sensor data structure which comprises of accel data
@@ -719,6 +809,14 @@ struct bmi160_sensor_data {
 	int16_t z;
 	/*! sensor time */
 	uint32_t sensortime;
+};
+
+/*!
+ * @brief bmi160 aux data structure which comprises of 8 bytes of accel data
+ */
+struct bmi160_aux_data {
+	/*! Auxiliary data */
+	uint8_t data[8];
 };
 
 /*!
@@ -856,14 +954,19 @@ struct bmi160_aux_cfg {
 	/*! i2c addr of auxiliary sensor */
 	uint8_t aux_i2c_addr;
 };
+
 /*!
  * @brief bmi160 interrupt channel selection structure
  */
 enum bmi160_int_channel {
+	/*! Un-map both channels */
+	BMI160_INT_CHANNEL_NONE,
 	/*! interrupt Channel 1 */
 	BMI160_INT_CHANNEL_1,
 	/*! interrupt Channel 2 */
-	BMI160_INT_CHANNEL_2
+	BMI160_INT_CHANNEL_2,
+	/*! Map both channels */
+	BMI160_INT_CHANNEL_BOTH
 };
 
 enum bmi160_int_types {

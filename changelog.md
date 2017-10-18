@@ -1,13 +1,25 @@
 # Change Log
-All notable changes to bmi160 Sensor API will be documented in this file. 
+All notable changes to bmi160 Sensor API will be documented in this file.
 
+## v3.7.2, 16 Oct 2017
+#### Added
+	- Aux FIFO support added
+	- Self-test issue fixed
+
+## v3.7.1, 10 Oct 2017
+#### Added
+	- Support for mapping and unmapping interrupt pin for channel 1, 2 and both
+	
+## v3.7.0, 05 Oct 2017
+#### Added
+	- Support for reading interrupt status
+	- Support for mapping and unmapping interrupt pin for channel 1 & 2
+	
 ## v3.6.1, 23 Aug 2017
-
 #### Changed
 * SPI support for FIFO reading and parsing logic update
 
 ## v3.6.0, 04 Aug 2017
-
 #### Added
 * Added interfaces for the following features 
      - FOC

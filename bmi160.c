@@ -40,8 +40,8 @@
  * patent rights of the copyright holder.
  *
  * @file    bmi160.c
- * @date    16 Oct 2017
- * @version 3.7.2
+ * @date    20 Nov 2017
+ * @version 3.7.3
  * @brief
  *
  */
@@ -1639,6 +1639,11 @@ int8_t bmi160_set_int_config(struct bmi160_int_settg *int_config, struct bmi160_
 	case BMI160_ACC_GYRO_FIFO_WATERMARK_INT:
 		 /* Fifo water-mark interrupt */
 		rslt = set_fifo_watermark_int(int_config, dev);
+		break;
+	case BMI160_FIFO_TAG_INT_PIN:
+		/* Fifo tagging feature support */
+		/* Configure Interrupt pins */
+		rslt = set_intr_pin_config(int_config, dev);
 		break;
 	default:
 		break;

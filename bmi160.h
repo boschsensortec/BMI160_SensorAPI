@@ -40,8 +40,8 @@
  * patent rights of the copyright holder.
  *
  * @file    bmi160.h
- * @date    16 Oct 2017
- * @version 3.7.2
+ * @date    20 Nov 2017
+ * @version 3.7.3
  * @brief
  *
  */

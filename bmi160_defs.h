@@ -40,8 +40,8 @@
  * patent rights of the copyright holder.
  *
  * @file    bmi160_defs.h
- * @date    16 Oct 2017
- * @version 3.7.2
+ * @date    20 Nov 2017
+ * @version 3.7.3
  * @brief
  *
  */
@@ -995,7 +995,9 @@ enum bmi160_int_types {
 	/*! fifo full interrupt */
 	BMI160_ACC_GYRO_FIFO_FULL_INT,
 	/*! fifo watermark interrupt */
-	BMI160_ACC_GYRO_FIFO_WATERMARK_INT
+	BMI160_ACC_GYRO_FIFO_WATERMARK_INT,
+	/*! fifo tagging feature support */
+	BMI160_FIFO_TAG_INT_PIN
 };
 
 /*!

@@ -1,6 +1,11 @@
 # Change Log
 All notable changes to bmi160 Sensor API will be documented in this file.
 
+## v3.7.3, 20 Nov 2017
+#### Added
+	- Provided support for FIFO tagging feature by adding 
+	  "BMI160_FIFO_TAG_INT_PIN" case to "bmi160_set_int_config" API
+
 ## v3.7.2, 16 Oct 2017
 #### Added
 	- Aux FIFO support added

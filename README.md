@@ -7,9 +7,9 @@ The sensor driver package includes bmi160.h, bmi160.c and bmi160_defs.h files
 ## Version
 File          | Version | Date
 --------------|---------|---------------
-bmi160.c      |   3.7.2 |   16 Oct 2017
-bmi160.h      |   3.7.2 |   16 Oct 2017
-bmi160_defs.h |   3.7.2 |   16 Oct 2017
+bmi160.c      |   3.7.3 |   20 Nov 2017
+bmi160.h      |   3.7.3 |   20 Nov 2017
+bmi160_defs.h |   3.7.3 |   20 Nov 2017
 
 ## Integration details
 * Integrate bmi160.h, bmi160_defs.h and bmi160.c file in to your project.
@@ -176,7 +176,7 @@ rslt = bmi160_soft_reset(&sensor);
 
 ### Configuring interrupts for sensors
 To configure the sensor interrupts, you will first need to create an interrupt 
-structure. You can do this by creating an instance of the structure bmi160_intr_sett.
+structure. You can do this by creating an instance of the structure bmi160_int_settg.
 Then go on to fill in the various parameters as shown below
 
 
@@ -185,7 +185,7 @@ Then go on to fill in the various parameters as shown below
 Note:- User can check the currently active interrupt(any-motion or sig-motion) by checking the **any_sig_sel** of bmi160_dev structure.
 ``` c
 
-struct bmi160_intr_sett int_config;
+struct bmi160_int_settg int_config;
 
 /* Select the Interrupt channel/pin */
 int_config.int_channel = BMI160_INT_CHANNEL_1;// Interrupt channel/pin 1
@@ -209,14 +209,14 @@ int_config.int_type_cfg.acc_any_motion_int.anymotion_dur = 0;// any-motion durat
 int_config.int_type_cfg.acc_any_motion_int.anymotion_thr = 20;// (2-g range) -> (slope_thr) * 3.91 mg, (4-g range) -> (slope_thr) * 7.81 mg, (8-g range) ->(slope_thr) * 15.63 mg, (16-g range) -> (slope_thr) * 31.25 mg 
 
 /* Set the Any-motion interrupt */
-bmi160_set_intr_config(&int_config, &sensor); /* sensor is an instance of the structure bmi160_dev  */
+bmi160_set_int_config(&int_config, &sensor); /* sensor is an instance of the structure bmi160_dev  */
 
 ```
 ### Configuring Flat Interrupt
 #### Example for configuring Flat Interrupt
 ``` c
 
-struct bmi160_intr_sett int_config;
+struct bmi160_int_settg int_config;
 
 /* Select the Interrupt channel/pin */
 int_config.int_channel = BMI160_INT_CHANNEL_1;// Interrupt channel/pin 1
@@ -238,7 +238,7 @@ int_config.int_type_cfg.acc_flat_int.flat_hy = 1;// Flat hysteresis
 int_config.int_type_cfg.acc_flat_int.flat_hold_time = 1;// Flat hold time (0 -> 0 ms, 1 -> 640 ms, 2 -> 1280 ms, 3 -> 2560 ms)
 
 /* Set the Flat interrupt */
-bmi160_set_intr_config(&int_config, &sensor); /* sensor is an instance of the structure bmi160_dev */
+bmi160_set_int_config(&int_config, &sensor); /* sensor is an instance of the structure bmi160_dev */
 
 ```
 
@@ -247,7 +247,7 @@ bmi160_set_intr_config(&int_config, &sensor); /* sensor is an instance of the st
 #### Example for configuring Step Detector Interrupt
 ``` c
 
-struct bmi160_intr_sett int_config;
+struct bmi160_int_settg int_config;
 
 /* Select the Interrupt channel/pin */
 int_config.int_channel = BMI160_INT_CHANNEL_1;// Interrupt channel/pin 1
@@ -267,7 +267,7 @@ int_config.int_type_cfg.acc_step_detect_int.step_detector_mode = BMI160_STEP_DET
 int_config.int_type_cfg.acc_step_detect_int.step_detector_en = BMI160_ENABLE;// 1-enable, 0-disable the step detector
 
 /* Set the Step Detector interrupt */
-bmi160_set_intr_config(&int_config, &sensor); /* sensor is an instance of the structure bmi160_dev */
+bmi160_set_int_config(&int_config, &sensor); /* sensor is an instance of the structure bmi160_dev */
 
 ```
 
@@ -294,14 +294,14 @@ rslt = bmi160_read_step_counter(&step_count,  &sensor);
 ### Unmapping Interrupt
 #### Example for unmapping Step Detector Interrupt
 ``` c
-struct bmi160_intr_sett int_config;
+struct bmi160_int_settg int_config;
 
 /* Deselect the Interrupt channel/pin */
 int_config.int_channel = BMI160_INT_CHANNEL_NONE;
 /* Select the Interrupt type */
 int_config.int_type = BMI160_STEP_DETECT_INT;// Choosing Step Detector interrupt
 /* Set the Step Detector interrupt */
-bmi160_set_intr_config(&int_config, &sensor); /* sensor is an instance of the structure bmi160_dev */
+bmi160_set_int_config(&int_config, &sensor); /* sensor is an instance of the structure bmi160_dev */
 ```
 
 ### Reading interrupt status

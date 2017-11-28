@@ -40,8 +40,8 @@
  * patent rights of the copyright holder.
  *
  * @file    bmi160.h
- * @date    20 Nov 2017
- * @version 3.7.3
+ * @date    24 Nov 2017
+ * @version 3.7.4
  * @brief
  *
  */
@@ -54,6 +54,7 @@
 #ifndef BMI160_H_
 #define BMI160_H_
 
+/*************************** C++ guard macro *****************************/
 #ifdef __cplusplus
 extern "C"
 {
@@ -650,6 +651,7 @@ int8_t bmi160_update_nvm(struct bmi160_dev const *dev);
 int8_t bmi160_get_int_status(enum bmi160_int_status_sel int_status_sel,
 				union bmi160_int_status *int_status, struct bmi160_dev const *dev);
 
+/*************************** C++ guard macro *****************************/
 #ifdef __cplusplus
 }
 #endif

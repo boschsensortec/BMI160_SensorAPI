@@ -1,6 +1,12 @@
 # Change Log
 All notable changes to bmi160 Sensor API will be documented in this file.
 
+## v3.7.4, 24 Nov 2017
+#### Added
+	- Linux compatibility issue fixed
+	- FIFO Sensortime access is updated
+	- Try concept used in bmi160_init API
+
 ## v3.7.3, 20 Nov 2017
 #### Added
 	- Provided support for FIFO tagging feature by adding 

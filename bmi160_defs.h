@@ -40,8 +40,8 @@
  * patent rights of the copyright holder.
  *
  * @file    bmi160_defs.h
- * @date    20 Nov 2017
- * @version 3.7.3
+ * @date    24 Nov 2017
+ * @version 3.7.4
  * @brief
  *
  */
@@ -63,56 +63,36 @@
 #include <stddef.h>
 #endif
 
-/*************************** C++ guard macro *****************************/
-#ifdef __cplusplus
-extern "C"
-{
-#endif
-
 /*************************** Common macros   *****************************/
-#ifdef __KERNEL__
-#if (LONG_MAX) > 0x7fffffff
-#define __have_long64 1
-#elif (LONG_MAX) == 0x7fffffff
-#define __have_long32 1
-#endif
+
+#if !defined(UINT8_C) && !defined(INT8_C)
+#define INT8_C(x)       S8_C(x)
+#define UINT8_C(x)      U8_C(x)
 #endif
 
-#if !defined(UINT8_C)
-#define INT8_C(x)       x
-#if (INT_MAX) > 0x7f
-#define UINT8_C(x)      x
-#else
-#define UINT8_C(x)      x##U
-#endif
-#endif
-
-#if !defined(UINT16_C)
-#define INT16_C(x)      x
-#if (INT_MAX) > 0x7fff
-#define UINT16_C(x)     x
-#else
-#define UINT16_C(x)     x##U
-#endif
+#if !defined(UINT16_C) && !defined(INT16_C)
+#define INT16_C(x)      S16_C(x)
+#define UINT16_C(x)     U16_C(x)
 #endif
 
 #if !defined(INT32_C) && !defined(UINT32_C)
-#if __have_long32
-#define INT32_C(x)      x##L
-#define UINT32_C(x)     x##UL
-#else
-#define INT32_C(x)      x
-#define UINT32_C(x)     x##U
-#endif
+#define INT32_C(x)      S32_C(x)
+#define UINT32_C(x)     U32_C(x)
 #endif
 
 #if !defined(INT64_C) && !defined(UINT64_C)
-#if __have_long64
-#define INT64_C(x)      x##L
-#define UINT64_C(x)     x##UL
+#define INT64_C(x)      S64_C(x)
+#define UINT64_C(x)     U64_C(x)
+#endif
+
+/**@}*/
+
+/**\name C standard macros */
+#ifndef NULL
+#ifdef __cplusplus
+#define NULL   0
 #else
-#define INT64_C(x)      x##LL
-#define UINT64_C(x)     x##ULL
+#define NULL   ((void *) 0)
 #endif
 #endif
 
@@ -497,6 +477,13 @@ extern "C"
 #define BMI160_FIFO_M_G_ENABLE           UINT8_C(0xA0)
 #define BMI160_FIFO_G_A_ENABLE           UINT8_C(0xC0)
 #define BMI160_FIFO_M_G_A_ENABLE         UINT8_C(0xE0)
+
+/* Macro to specify the number of bytes over-read from the
+ * FIFO in order to get the sensor time at the end of FIFO */
+#ifndef BMI160_FIFO_BYTES_OVERREAD
+#define BMI160_FIFO_BYTES_OVERREAD       UINT8_C(25)
+#endif
+
 
 
 /* Accel, gyro and aux. sensor length and also their combined
@@ -1426,9 +1413,5 @@ struct bmi160_dev {
 	bmi160_delay_fptr_t delay_ms;
 };
 
-/*************************** C++ guard macro *****************************/
-#ifdef __cplusplus
-}
-#endif
 
 #endif /* BMI160_DEFS_H_ */

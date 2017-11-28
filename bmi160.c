@@ -40,8 +40,8 @@
  * patent rights of the copyright holder.
  *
  * @file    bmi160.c
- * @date    20 Nov 2017
- * @version 3.7.3
+ * @date    24 Nov 2017
+ * @version 3.7.4
  * @brief
  *
  */
@@ -77,7 +77,7 @@ const uint8_t int_mask_lookup_table[13] = {
 
 /*!
  * @brief This API configures the pins to fire the
- * interrupt signal when it occurs.
+ * interrupt signal when it occurs
  *
  * @param[in] int_config  : Structure instance of bmi160_int_settg.
  * @param[in] dev         : Structure instance of bmi160_dev.
@@ -1423,7 +1423,10 @@ int8_t bmi160_init(struct bmi160_dev *dev)
 {
 	int8_t rslt;
 	uint8_t data;
-	uint8_t chip_id;
+	uint8_t try = 3;
+
+	/* Assign chip id as zero */
+	dev->chip_id = 0;
 
 	/* Null-pointer check */
 	rslt = null_ptr_check(dev);
@@ -1434,11 +1437,13 @@ int8_t bmi160_init(struct bmi160_dev *dev)
 		rslt = bmi160_get_regs(BMI160_SPI_COMM_TEST_ADDR, &data, 1, dev);
 
 	if (rslt == BMI160_OK) {
-		/* Read chip_id */
-		rslt = bmi160_get_regs(BMI160_CHIP_ID_ADDR, &chip_id, 1, dev);
 
-		if ((rslt == BMI160_OK) && (chip_id == BMI160_CHIP_ID)) {
-			dev->chip_id = chip_id;
+		while ((try--) && (dev->chip_id != BMI160_CHIP_ID)) {
+			/* Read chip_id */
+			rslt = bmi160_get_regs(BMI160_CHIP_ID_ADDR, &dev->chip_id, 1, dev);
+		}
+
+		if ((rslt == BMI160_OK) && (dev->chip_id == BMI160_CHIP_ID)) {
 			dev->any_sig_sel = BMI160_BOTH_ANY_SIG_MOTION_DISABLED;
 			/* Soft reset */
 			rslt = bmi160_soft_reset(dev);
@@ -1955,6 +1960,7 @@ int8_t bmi160_get_fifo_data(struct bmi160_dev const *dev)
 		rslt = get_fifo_byte_counter(&bytes_to_read, dev);
 		if (rslt == BMI160_OK) {
 			user_fifo_len = dev->fifo->length;
+
 			if (dev->fifo->length > bytes_to_read) {
 				/* Handling the case where user requests
 				more data than available in FIFO */
@@ -1962,9 +1968,9 @@ int8_t bmi160_get_fifo_data(struct bmi160_dev const *dev)
 			}
 
 			if ((dev->fifo->fifo_time_enable == BMI160_FIFO_TIME_ENABLE)
-				&& (bytes_to_read + 4 <= user_fifo_len)) {
-				/* Handling case of sensor time availability */
-				dev->fifo->length = dev->fifo->length + 4;
+				&& (bytes_to_read + BMI160_FIFO_BYTES_OVERREAD <= user_fifo_len)) {
+				/* Handling case of sensor time availability*/
+				dev->fifo->length = dev->fifo->length + BMI160_FIFO_BYTES_OVERREAD;
 			}
 
 			if (dev->interface == BMI160_SPI_INTF) {

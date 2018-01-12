@@ -7,9 +7,9 @@ The sensor driver package includes bmi160.h, bmi160.c and bmi160_defs.h files
 ## Version
 File          | Version | Date
 --------------|---------|---------------
-bmi160.c      |   3.7.4 |   24 Nov 2017
-bmi160.h      |   3.7.4 |   24 Nov 2017
-bmi160_defs.h |   3.7.4 |   24 Nov 2017
+bmi160.c      |   3.7.5 |   11 Jan 2018
+bmi160.h      |   3.7.5 |   11 Jan 2018
+bmi160_defs.h |   3.7.5 |   11 Jan 2018
 
 ## Integration details
 * Integrate bmi160.h, bmi160_defs.h and bmi160.c file in to your project.

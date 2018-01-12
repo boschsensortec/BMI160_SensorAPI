@@ -40,8 +40,8 @@
  * patent rights of the copyright holder.
  *
  * @file    bmi160.h
- * @date    24 Nov 2017
- * @version 3.7.4
+ * @date    11 Jan 2018
+ * @version 3.7.5
  * @brief
  *
  */
@@ -145,6 +145,32 @@ int8_t bmi160_set_sens_conf(struct bmi160_dev *dev);
  * @retval zero -> Success / -ve value -> Error.
  */
 int8_t bmi160_set_power_mode(struct bmi160_dev *dev);
+
+/*!
+ * @brief This API gets the power mode of the sensor.
+ *
+ * @param[in] power_mode  : Power mode of the sensor
+ * @param[in] dev         : Structure instance of bmi160_dev
+ *
+ * power_mode Macros possible values for pmu_status->aux_pmu_status :
+ *  - BMI160_AUX_PMU_SUSPEND
+ *  - BMI160_AUX_PMU_NORMAL
+ *  - BMI160_AUX_PMU_LOW_POWER
+ *
+ * power_mode Macros possible values for pmu_status->gyro_pmu_status :
+ *  - BMI160_GYRO_PMU_SUSPEND
+ *  - BMI160_GYRO_PMU_NORMAL
+ *  - BMI160_GYRO_PMU_FSU
+ *
+ * power_mode Macros possible values for pmu_status->accel_pmu_status :
+ *  - BMI160_ACCEL_PMU_SUSPEND
+ *  - BMI160_ACCEL_PMU_NORMAL
+ *  - BMI160_ACCEL_PMU_LOW_POWER
+ *
+ * @return Result of API execution status
+ * @retval zero -> Success / -ve value -> Error.
+ */
+int8_t bmi160_get_power_mode(struct bmi160_pmu_status *pmu_status, const struct bmi160_dev *dev);
 
 /*!
  * @brief This API reads sensor data, stores it in

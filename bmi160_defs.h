@@ -40,8 +40,8 @@
  * patent rights of the copyright holder.
  *
  * @file    bmi160_defs.h
- * @date    24 Nov 2017
- * @version 3.7.4
+ * @date    11 Jan 2018
+ * @version 3.7.5
  * @brief
  *
  */
@@ -137,6 +137,19 @@
 #define BMI160_STEP_DETECT_EN_MASK              UINT8_C(0x08)
 #define BMI160_FLAT_INT_EN_MASK                 UINT8_C(0x80)
 #define BMI160_DATA_RDY_INT_EN_MASK             UINT8_C(0x10)
+
+/** PMU status Macros */
+#define BMI160_AUX_PMU_SUSPEND         UINT8_C(0x00)
+#define BMI160_AUX_PMU_NORMAL          UINT8_C(0x01)
+#define BMI160_AUX_PMU_LOW_POWER       UINT8_C(0x02)
+
+#define BMI160_GYRO_PMU_SUSPEND        UINT8_C(0x00)
+#define BMI160_GYRO_PMU_NORMAL         UINT8_C(0x01)
+#define BMI160_GYRO_PMU_FSU            UINT8_C(0x03)
+
+#define BMI160_ACCEL_PMU_SUSPEND       UINT8_C(0x00)
+#define BMI160_ACCEL_PMU_NORMAL        UINT8_C(0x01)
+#define BMI160_ACCEL_PMU_LOW_POWER     UINT8_C(0x02)
 
 /** Mask definitions for INT_OUT_CTRL register */
 #define BMI160_INT1_EDGE_CTRL_MASK              UINT8_C(0x01)
@@ -266,6 +279,7 @@
 /** BMI160 Register map */
 #define BMI160_CHIP_ID_ADDR		UINT8_C(0x00)
 #define BMI160_ERROR_REG_ADDR		UINT8_C(0x02)
+#define BMI160_PMU_STATUS_ADDR		UINT8_C(0x03)
 #define BMI160_AUX_DATA_ADDR		UINT8_C(0x04)
 #define BMI160_GYRO_DATA_ADDR		UINT8_C(0x0C)
 #define BMI160_ACCEL_DATA_ADDR		UINT8_C(0x12)
@@ -656,7 +670,6 @@
 #define BMI160_ACCEL_OFFSET_EN_POS	UINT8_C(6)
 #define BMI160_ACCEL_OFFSET_EN_MSK	UINT8_C(0x40)
 
-
 #define BMI160_GYRO_OFFSET_POS	        UINT16_C(8)
 #define BMI160_GYRO_OFFSET_MSK	        UINT16_C(0x0300)
 
@@ -665,6 +678,15 @@
 
 #define BMI160_NVM_STATUS_POS	        UINT8_C(4)
 #define BMI160_NVM_STATUS_MSK	        UINT8_C(0x10)
+
+#define BMI160_MAG_POWER_MODE_MSK       UINT8_C(0x03)
+
+#define BMI160_ACCEL_POWER_MODE_MSK     UINT8_C(0x30)
+#define BMI160_ACCEL_POWER_MODE_POS     UINT8_C(4)
+
+#define BMI160_GYRO_POWER_MODE_MSK      UINT8_C(0x0C)
+#define BMI160_GYRO_POWER_MODE_POS      UINT8_C(2)
+
 
 /* BIT SLICE GET AND SET FUNCTIONS */
 #define	BMI160_GET_BITS(regvar, bitname)\
@@ -694,6 +716,32 @@ typedef int8_t (*bmi160_com_fptr_t)(uint8_t dev_addr, uint8_t reg_addr,
 typedef void (*bmi160_delay_fptr_t)(uint32_t period);
 
 /*************************** Data structures *********************************/
+
+struct bmi160_pmu_status {
+	/*! Power mode status of Accel
+	 * Possible values :
+	 *  - BMI160_ACCEL_PMU_SUSPEND
+	 *  - BMI160_ACCEL_PMU_NORMAL
+	 *  - BMI160_ACCEL_PMU_LOW_POWER
+	 */
+	uint8_t accel_pmu_status;
+	/*! Power mode status of Gyro
+	 * Possible values :
+	 *  - BMI160_GYRO_PMU_SUSPEND
+	 *  - BMI160_GYRO_PMU_NORMAL
+	 *  - BMI160_GYRO_PMU_FSU
+	 */
+	uint8_t gyro_pmu_status;
+	/*! Power mode status of 'Auxiliary sensor interface' whereas the actual
+	 *  power mode of the aux. sensor should be configured
+	 *  according to the connected sensor specifications
+	 * Possible values :
+	 *  - BMI160_AUX_PMU_SUSPEND
+	 *  - BMI160_AUX_PMU_NORMAL
+	 *  - BMI160_AUX_PMU_LOW_POWER
+	 */
+	uint8_t aux_pmu_status;
+};
 /*!
  * @brief bmi160 interrupt status selection enum.
  */

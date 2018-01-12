@@ -1,6 +1,13 @@
 # Change Log
 All notable changes to bmi160 Sensor API will be documented in this file.
 
+## v3.7.5, 11 Jan 2018
+#### Added
+	- "bmi160_get_power_mode" API added
+#### Changed
+	- bmi160_init function github comment fixed
+
+
 ## v3.7.4, 24 Nov 2017
 #### Added
 	- Linux compatibility issue fixed

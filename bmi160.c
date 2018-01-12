@@ -40,8 +40,8 @@
  * patent rights of the copyright holder.
  *
  * @file    bmi160.c
- * @date    24 Nov 2017
- * @version 3.7.4
+ * @date    11 Jan 2018
+ * @version 3.7.5
  * @brief
  *
  */
@@ -1425,9 +1425,6 @@ int8_t bmi160_init(struct bmi160_dev *dev)
 	uint8_t data;
 	uint8_t try = 3;
 
-	/* Assign chip id as zero */
-	dev->chip_id = 0;
-
 	/* Null-pointer check */
 	rslt = null_ptr_check(dev);
 
@@ -1437,6 +1434,8 @@ int8_t bmi160_init(struct bmi160_dev *dev)
 		rslt = bmi160_get_regs(BMI160_SPI_COMM_TEST_ADDR, &data, 1, dev);
 
 	if (rslt == BMI160_OK) {
+		/* Assign chip id as zero */
+		dev->chip_id = 0;
 
 		while ((try--) && (dev->chip_id != BMI160_CHIP_ID)) {
 			/* Read chip_id */
@@ -1529,7 +1528,30 @@ int8_t bmi160_set_power_mode(struct bmi160_dev *dev)
 	}
 
 	return rslt;
+}
 
+/*!
+ * @brief This API gets the power mode of the sensor.
+ */
+int8_t bmi160_get_power_mode(struct bmi160_pmu_status *pmu_status, const struct bmi160_dev *dev)
+{
+	int8_t rslt = 0;
+	uint8_t power_mode = 0;
+
+	/* Null-pointer check */
+	if ((dev == NULL) || (dev->delay_ms == NULL)) {
+		rslt = BMI160_E_NULL_PTR;
+	} else {
+		rslt = bmi160_get_regs(BMI160_PMU_STATUS_ADDR, &power_mode, 1, dev);
+		if (rslt == BMI160_OK) {
+			/* Power mode of the accel,gyro,aux sensor is obtained */
+			pmu_status->aux_pmu_status = BMI160_GET_BITS_POS_0(power_mode, BMI160_MAG_POWER_MODE);
+			pmu_status->gyro_pmu_status = BMI160_GET_BITS(power_mode, BMI160_GYRO_POWER_MODE);
+			pmu_status->accel_pmu_status = BMI160_GET_BITS(power_mode, BMI160_ACCEL_POWER_MODE);
+		}
+	}
+
+	return rslt;
 }
 
 /*!
@@ -1584,7 +1606,6 @@ int8_t bmi160_get_sensor_data(uint8_t select_sensor, struct bmi160_sensor_data *
 	}
 
 	return rslt;
-
 }
 
 /*!

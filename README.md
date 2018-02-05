@@ -193,12 +193,12 @@ int_config.int_channel = BMI160_INT_CHANNEL_1;// Interrupt channel/pin 1
 /* Select the Interrupt type */
 int_config.int_type = BMI160_ACC_ANY_MOTION_INT;// Choosing Any motion interrupt
 /* Select the interrupt channel/pin settings */
-int_config.int_pin_sett.output_en = BMI160_ENABLE;// Enabling interrupt pins to act as output pin
-int_config.int_pin_sett.output_mode = BMI160_DISABLE;// Choosing push-pull mode for interrupt pin
-int_config.int_pin_sett.output_type = BMI160_DISABLE;// Choosing active low output
-int_config.int_pin_sett.edge_ctrl = BMI160_ENABLE;// Choosing edge triggered output
-int_config.int_pin_sett.input_en = BMI160_DISABLE;// Disabling interrupt pin to act as input
-int_config.int_pin_sett.latch_dur = BMI160_LATCH_DUR_NONE;// non-latched output
+int_config.int_pin_settg.output_en = BMI160_ENABLE;// Enabling interrupt pins to act as output pin
+int_config.int_pin_settg.output_mode = BMI160_DISABLE;// Choosing push-pull mode for interrupt pin
+int_config.int_pin_settg.output_type = BMI160_DISABLE;// Choosing active low output
+int_config.int_pin_settg.edge_ctrl = BMI160_ENABLE;// Choosing edge triggered output
+int_config.int_pin_settg.input_en = BMI160_DISABLE;// Disabling interrupt pin to act as input
+int_config.int_pin_settg.latch_dur = BMI160_LATCH_DUR_NONE;// non-latched output
 
 /* Select the Any-motion interrupt parameters */
 int_config.int_type_cfg.acc_any_motion_int.anymotion_en = BMI160_ENABLE;// 1- Enable the any-motion, 0- disable any-motion 
@@ -224,12 +224,12 @@ int_config.int_channel = BMI160_INT_CHANNEL_1;// Interrupt channel/pin 1
 /* Select the Interrupt type */
 int_config.int_type = BMI160_ACC_FLAT_INT;// Choosing flat interrupt
 /* Select the interrupt channel/pin settings */
-int_config.int_pin_sett.output_en = BMI160_ENABLE;// Enabling interrupt pins to act as output pin
-int_config.int_pin_sett.output_mode = BMI160_DISABLE;// Choosing push-pull mode for interrupt pin
-int_config.int_pin_sett.output_type = BMI160_DISABLE;// Choosing active low output
-int_config.int_pin_sett.edge_ctrl = BMI160_ENABLE;// Choosing edge triggered output
-int_config.int_pin_sett.input_en = BMI160_DISABLE;// Disabling interrupt pin to act as input
-int_config.int_pin_sett.latch_dur = BMI160_LATCH_DUR_NONE;// non-latched output
+int_config.int_pin_settg.output_en = BMI160_ENABLE;// Enabling interrupt pins to act as output pin
+int_config.int_pin_settg.output_mode = BMI160_DISABLE;// Choosing push-pull mode for interrupt pin
+int_config.int_pin_settg.output_type = BMI160_DISABLE;// Choosing active low output
+int_config.int_pin_settg.edge_ctrl = BMI160_ENABLE;// Choosing edge triggered output
+int_config.int_pin_settg.input_en = BMI160_DISABLE;// Disabling interrupt pin to act as input
+int_config.int_pin_settg.latch_dur = BMI160_LATCH_DUR_NONE;// non-latched output
 
 /* Select the Flat interrupt parameters */
 int_config.int_type_cfg.acc_flat_int.flat_en = BMI160_ENABLE;// 1-enable, 0-disable the flat interrupt
@@ -255,12 +255,12 @@ int_config.int_channel = BMI160_INT_CHANNEL_1;// Interrupt channel/pin 1
 /* Select the Interrupt type */
 int_config.int_type = BMI160_STEP_DETECT_INT;// Choosing Step Detector interrupt
 /* Select the interrupt channel/pin settings */
-int_config.int_pin_sett.output_en = BMI160_ENABLE;// Enabling interrupt pins to act as output pin
-int_config.int_pin_sett.output_mode = BMI160_DISABLE;// Choosing push-pull mode for interrupt pin
-int_config.int_pin_sett.output_type = BMI160_ENABLE;// Choosing active High output
-int_config.int_pin_sett.edge_ctrl = BMI160_ENABLE;// Choosing edge triggered output
-int_config.int_pin_sett.input_en = BMI160_DISABLE;// Disabling interrupt pin to act as input
-int_config.int_pin_sett.latch_dur =BMI160_LATCH_DUR_NONE;// non-latched output
+int_config.int_pin_settg.output_en = BMI160_ENABLE;// Enabling interrupt pins to act as output pin
+int_config.int_pin_settg.output_mode = BMI160_DISABLE;// Choosing push-pull mode for interrupt pin
+int_config.int_pin_settg.output_type = BMI160_ENABLE;// Choosing active High output
+int_config.int_pin_settg.edge_ctrl = BMI160_ENABLE;// Choosing edge triggered output
+int_config.int_pin_settg.input_en = BMI160_DISABLE;// Disabling interrupt pin to act as input
+int_config.int_pin_settg.latch_dur =BMI160_LATCH_DUR_NONE;// non-latched output
 
 /* Select the Step Detector interrupt parameters, Kindly use the recommended settings for step detector */
 int_config.int_type_cfg.acc_step_detect_int.step_detector_mode = BMI160_STEP_DETECT_NORMAL;

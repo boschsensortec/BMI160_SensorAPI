@@ -1,4 +1,7 @@
 # BMI160 sensor API
+For the Accelerometer and Gyroscope 
+ https://www.bosch-sensortec.com/bst/products/all_products/bmi160 
+
 ## Introduction
 This package contains the Bosch Sensortec's BMI160 sensor driver (sensor API)
 

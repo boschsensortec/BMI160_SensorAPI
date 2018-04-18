@@ -3571,7 +3571,7 @@ static int8_t config_any_dur_threshold(const struct bmi160_acc_any_mot_int_cfg *
 		/* slope duration */
 		dur = (uint8_t)any_motion_int_cfg->anymotion_dur;
 		temp = data & ~BMI160_SLOPE_INT_DUR_MASK;
-		data = temp | (dur & BMI160_MOTION_SRC_INT_MASK);
+		data = temp | (dur & BMI160_SLOPE_INT_DUR_MASK);
 		data_array[0] = data;
 		/* add slope threshold */
 		data_array[1] = any_motion_int_cfg->anymotion_thr;

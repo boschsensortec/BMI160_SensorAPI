@@ -4502,7 +4502,7 @@ static int8_t config_int_out_ctrl(const struct bmi160_int_settg *int_config, con
 		const struct bmi160_int_pin_settg *intr_pin_sett = &(int_config->int_pin_settg);
 
 		/* Configuring channel 1 */
-		if (int_config->int_channel == BMI160_INT_CHANNEL_1) {
+		if ((int_config->int_channel == BMI160_INT_CHANNEL_1) || (int_config->int_channel == BMI160_INT_CHANNEL_BOTH)) {
 
 			/* Output enable */
 			temp = data & ~BMI160_INT1_OUTPUT_EN_MASK;
@@ -4519,10 +4519,12 @@ static int8_t config_int_out_ctrl(const struct bmi160_int_settg *int_config, con
 			/* edge control */
 			temp = data & ~BMI160_INT1_EDGE_CTRL_MASK;
 			data = temp | ((intr_pin_sett->edge_ctrl) & BMI160_INT1_EDGE_CTRL_MASK);
+		} 
+       
+	    /* Configuring channel 2 */
+        if ((int_config->int_channel == BMI160_INT_CHANNEL_2) || (int_config->int_channel == BMI_INT_CHANNEL_BOTH)) {
 
-		} else {
-			/* Configuring channel 2 */
-			/* Output enable */
+          /* Output enable */
 			temp = data & ~BMI160_INT2_OUTPUT_EN_MASK;
 			data = temp | ((intr_pin_sett->output_en << 7) & BMI160_INT2_OUTPUT_EN_MASK);
 

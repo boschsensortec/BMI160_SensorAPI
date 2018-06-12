@@ -4498,11 +4498,23 @@ static int8_t config_int_out_ctrl(const struct bmi160_int_settg *int_config, con
 	rslt = bmi160_get_regs(BMI160_INT_OUT_CTRL_ADDR, &data, 1, dev);
 
 	if (rslt == BMI160_OK) {
+        
+		/* guard statement to ensure a valid pin channel is configured */
+		switch (int_config->int_channel) {
+			case BMI160_INT_CHANNEL_1:
+			case BMI160_INT_CHANNEL_2:
+			case BMI160_INT_CHANNEL_BOTH:
+				break;
+			default: // invalid pin channel
+				return BMI160_E_DEV_NOT_FOUND;
+		}
+
 		/* updating the interrupt pin structure to local structure */
 		const struct bmi160_int_pin_settg *intr_pin_sett = &(int_config->int_pin_settg);
 
 		/* Configuring channel 1 */
-		if (int_config->int_channel == BMI160_INT_CHANNEL_1) {
+		if ((int_config->int_channel == BMI160_INT_CHANNEL_1) ||
+			(int_config->int_channel == BMI160_INT_CHANNEL_BOTH)) {
 
 			/* Output enable */
 			temp = data & ~BMI160_INT1_OUTPUT_EN_MASK;
@@ -4519,9 +4531,12 @@ static int8_t config_int_out_ctrl(const struct bmi160_int_settg *int_config, con
 			/* edge control */
 			temp = data & ~BMI160_INT1_EDGE_CTRL_MASK;
 			data = temp | ((intr_pin_sett->edge_ctrl) & BMI160_INT1_EDGE_CTRL_MASK);
+		} 
+       
+		/* Configuring channel 2 */
+		if ((int_config->int_channel == BMI160_INT_CHANNEL_2) ||
+			(int_config->int_channel == BMI160_INT_CHANNEL_BOTH)) {
 
-		} else {
-			/* Configuring channel 2 */
 			/* Output enable */
 			temp = data & ~BMI160_INT2_OUTPUT_EN_MASK;
 			data = temp | ((intr_pin_sett->output_en << 7) & BMI160_INT2_OUTPUT_EN_MASK);

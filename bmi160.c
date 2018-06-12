@@ -4532,7 +4532,7 @@ static int8_t config_int_out_ctrl(const struct bmi160_int_settg *int_config, con
 		} 
        
 	    /* Configuring channel 2 */
-        if ((int_config->int_channel == BMI160_INT_CHANNEL_2) || (int_config->int_channel == BMI_INT_CHANNEL_BOTH)) {
+        if ((int_config->int_channel == BMI160_INT_CHANNEL_2) || (int_config->int_channel == BMI160_INT_CHANNEL_BOTH)) {
 
           /* Output enable */
 			temp = data & ~BMI160_INT2_OUTPUT_EN_MASK;

@@ -711,7 +711,7 @@
 
 /*****************************************************************************/
 /* type definitions */
-typedef int8_t (*bmi160_com_fptr_t)(uint8_t dev_addr, uint8_t reg_addr, uint8_t *data, uint16_t len);
+typedef int8_t (*bmi160_com_fptr_t)(uint8_t dev_addr, uint8_t reg_addr, uint8_t *data, uint16_t len, void* ctx);
 typedef void (*bmi160_delay_fptr_t)(uint32_t period);
 
 /*************************** Data structures *********************************/
@@ -1669,6 +1669,9 @@ struct bmi160_dev
 
     /*!  Delay function pointer */
     bmi160_delay_fptr_t delay_ms;
+
+    /* pointer to context */
+    void* ctx;
 };
 
 #endif /* BMI160_DEFS_H_ */

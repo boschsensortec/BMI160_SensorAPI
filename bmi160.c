@@ -1383,7 +1383,7 @@ int8_t bmi160_get_regs(uint8_t reg_addr, uint8_t *data, uint16_t len, const stru
         {
             reg_addr = (reg_addr | BMI160_SPI_RD_MASK);
         }
-        rslt = dev->read(dev->id, reg_addr, data, len);
+        rslt = dev->read(dev->id, reg_addr, data, len, dev->ctx);
 
         if (rslt != BMI160_OK)
         {
@@ -1418,7 +1418,7 @@ int8_t bmi160_set_regs(uint8_t reg_addr, uint8_t *data, uint16_t len, const stru
         if ((dev->prev_accel_cfg.power == BMI160_ACCEL_NORMAL_MODE) ||
             (dev->prev_gyro_cfg.power == BMI160_GYRO_NORMAL_MODE))
         {
-            rslt = dev->write(dev->id, reg_addr, data, len);
+            rslt = dev->write(dev->id, reg_addr, data, len, dev->ctx);
 
             /* Kindly refer bmi160 data sheet section 3.2.4 */
             dev->delay_ms(1);
@@ -1430,7 +1430,7 @@ int8_t bmi160_set_regs(uint8_t reg_addr, uint8_t *data, uint16_t len, const stru
              * suspend & low power mode */
             for (; count < len; count++)
             {
-                rslt = dev->write(dev->id, reg_addr, &data[count], 1);
+                rslt = dev->write(dev->id, reg_addr, &data[count], 1, dev->ctx);
                 reg_addr++;
 
                 /* Kindly refer bmi160 data sheet section 3.2.4 */
@@ -2149,7 +2149,7 @@ int8_t bmi160_get_fifo_data(struct bmi160_dev const *dev)
             }
 
             /* read only the filled bytes in the FIFO Buffer */
-            rslt = dev->read(dev->id, addr, dev->fifo->data, dev->fifo->length);
+            rslt = dev->read(dev->id, addr, dev->fifo->data, dev->fifo->length, dev->ctx);
         }
     }
 

@@ -7,9 +7,9 @@ The sensor driver package includes bmi160.h, bmi160.c and bmi160_defs.h files
 ## Version
 File          | Version | Date
 --------------|---------|---------------
-bmi160.c      |   3.7.7 |   13 Mar 2019
-bmi160.h      |   3.7.7 |   13 Mar 2019
-bmi160_defs.h |   3.7.7 |   13 Mar 2019
+bmi160.c      |   3.7.5 |   11 Jan 2018
+bmi160.h      |   3.7.5 |   11 Jan 2018
+bmi160_defs.h |   3.7.5 |   11 Jan 2018
 
 ## Integration details
 * Integrate bmi160.h, bmi160_defs.h and bmi160.c file in to your project.
@@ -790,4 +790,4 @@ int8_t write_offsets_nvm(struct bmi160_dev *dev)
 
 
 
-## Copyright (C) 2019 Bosch Sensortec GmbH
+## Copyright (C) 2016 - 2017 Bosch Sensortec GmbH

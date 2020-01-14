@@ -1,50 +1,40 @@
 /**
- * Copyright (C) 2018 - 2019 Bosch Sensortec GmbH
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *
- * Redistributions in binary form must reproduce the above copyright
- * notice, this list of conditions and the following disclaimer in the
- * documentation and/or other materials provided with the distribution.
- *
- * Neither the name of the copyright holder nor the names of the
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
- * CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL COPYRIGHT HOLDER
- * OR CONTRIBUTORS BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
- * OR CONSEQUENTIAL DAMAGES(INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE
- *
- * The information provided is believed to be accurate and reliable.
- * The copyright holder assumes no responsibility
- * for the consequences of use
- * of such information nor for any infringement of patents or
- * other rights of third parties which may result from its use.
- * No license is granted by implication or otherwise under any patent or
- * patent rights of the copyright holder.
- *
- * @file    bmi160.c
- * @date   13 Mar 2019
- * @version 3.7.7
- * @brief
- *
- */
+* Copyright (c) 2020 Bosch Sensortec GmbH. All rights reserved.
+*
+* BSD-3-Clause
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+*
+* 1. Redistributions of source code must retain the above copyright
+*    notice, this list of conditions and the following disclaimer.
+*
+* 2. Redistributions in binary form must reproduce the above copyright
+*    notice, this list of conditions and the following disclaimer in the
+*    documentation and/or other materials provided with the distribution.
+*
+* 3. Neither the name of the copyright holder nor the names of its
+*    contributors may be used to endorse or promote products derived from
+*    this software without specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+* FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+* COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+* SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+* HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+* STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+* IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+* POSSIBILITY OF SUCH DAMAGE.
+*
+* @file bmi160.c
+* @date 10/01/2020
+* @version  3.8.1
+*
+*/
 
 /*!
  * @defgroup bmi160
@@ -1371,10 +1361,23 @@ int8_t bmi160_get_regs(uint8_t reg_addr, uint8_t *data, uint16_t len, const stru
 {
     int8_t rslt = BMI160_OK;
 
+    /* Variable to define temporary length */
+    uint16_t temp_len = len + dev->dummy_byte;
+
+    /* Variable to define temporary buffer */
+    uint8_t temp_buf[temp_len];
+
+    /* Variable to define loop */
+    uint16_t indx = 0;
+
     /* Null-pointer check */
     if ((dev == NULL) || (dev->read == NULL))
     {
         rslt = BMI160_E_NULL_PTR;
+    }
+    else if (len == 0)
+    {
+        rslt = BMI160_READ_WRITE_LENGHT_INVALID;
     }
     else
     {
@@ -1383,9 +1386,18 @@ int8_t bmi160_get_regs(uint8_t reg_addr, uint8_t *data, uint16_t len, const stru
         {
             reg_addr = (reg_addr | BMI160_SPI_RD_MASK);
         }
-        rslt = dev->read(dev->id, reg_addr, data, len);
+        rslt = dev->read(dev->id, reg_addr, temp_buf, temp_len);
 
-        if (rslt != BMI160_OK)
+        if (rslt == BMI160_OK)
+        {
+            /* Read the data from the position next to dummy byte */
+            while (indx < len)
+            {
+                data[indx] = temp_buf[indx];
+                indx++;
+            }
+        }
+        else
         {
             rslt = BMI160_E_COM_FAIL;
         }
@@ -1407,6 +1419,10 @@ int8_t bmi160_set_regs(uint8_t reg_addr, uint8_t *data, uint16_t len, const stru
     if ((dev == NULL) || (dev->write == NULL))
     {
         rslt = BMI160_E_NULL_PTR;
+    }
+    else if (len == 0)
+    {
+        rslt = BMI160_READ_WRITE_LENGHT_INVALID;
     }
     else
     {
@@ -1461,16 +1477,28 @@ int8_t bmi160_init(struct bmi160_dev *dev)
     /* Null-pointer check */
     rslt = null_ptr_check(dev);
 
+    /* An extra dummy byte is read during SPI read */
+    if (dev->interface == BMI160_SPI_INTF)
+    {
+        dev->dummy_byte = 1;
+    }
+    else
+    {
+        dev->dummy_byte = 0;
+    }
+
     /* Dummy read of 0x7F register to enable SPI Interface
      * if SPI is used */
     if ((rslt == BMI160_OK) && (dev->interface == BMI160_SPI_INTF))
     {
         rslt = bmi160_get_regs(BMI160_SPI_COMM_TEST_ADDR, &data, 1, dev);
     }
+
     if (rslt == BMI160_OK)
     {
         /* Assign chip id as zero */
         dev->chip_id = 0;
+
         while ((try--) && (dev->chip_id != BMI160_CHIP_ID))
         {
             /* Read chip_id */
@@ -2061,6 +2089,7 @@ int8_t bmi160_perform_self_test(uint8_t select_sensor, struct bmi160_dev *dev)
     }
     else
     {
+
         /* Proceed if null check is fine */
         switch (select_sensor)
         {
@@ -2079,6 +2108,7 @@ int8_t bmi160_perform_self_test(uint8_t select_sensor, struct bmi160_dev *dev)
                     /* Perform gyro self test */
                     rslt = perform_gyro_self_test(dev);
                 }
+
                 break;
             default:
                 rslt = BMI160_E_INVALID_INPUT;
@@ -2093,6 +2123,7 @@ int8_t bmi160_perform_self_test(uint8_t select_sensor, struct bmi160_dev *dev)
 
             /* Perform soft reset */
             rslt = bmi160_soft_reset(dev);
+
         }
 
         /* Check to ensure bus operations are success */
@@ -2114,7 +2145,6 @@ int8_t bmi160_get_fifo_data(struct bmi160_dev const *dev)
     int8_t rslt = 0;
     uint16_t bytes_to_read = 0;
     uint16_t user_fifo_len = 0;
-    uint8_t addr = BMI160_FIFO_DATA_ADDR;
 
     /* check the bmi160 structure as NULL*/
     if ((dev == NULL) || (dev->fifo->data == NULL))
@@ -2130,7 +2160,7 @@ int8_t bmi160_get_fifo_data(struct bmi160_dev const *dev)
         if (rslt == BMI160_OK)
         {
             user_fifo_len = dev->fifo->length;
-            if (dev->fifo->length > bytes_to_read)
+            if ((dev->fifo->length > bytes_to_read))
             {
                 /* Handling the case where user requests
                  * more data than available in FIFO */
@@ -2142,14 +2172,9 @@ int8_t bmi160_get_fifo_data(struct bmi160_dev const *dev)
                 /* Handling case of sensor time availability*/
                 dev->fifo->length = dev->fifo->length + BMI160_FIFO_BYTES_OVERREAD;
             }
-            if (dev->interface == BMI160_SPI_INTF)
-            {
-                /* SPI read mask */
-                addr = addr | BMI160_SPI_RD_MASK;
-            }
 
             /* read only the filled bytes in the FIFO Buffer */
-            rslt = dev->read(dev->id, addr, dev->fifo->data, dev->fifo->length);
+            rslt = bmi160_get_regs(BMI160_FIFO_DATA_ADDR, dev->fifo->data, dev->fifo->length, dev);
         }
     }
 
@@ -3474,19 +3499,16 @@ static int8_t process_under_sampling(uint8_t *data, const struct bmi160_dev *dev
                 rslt = bmi160_set_regs(BMI160_INT_DATA_0_ADDR, &pre_filter, 2, dev);
             }
         }
-        else
+        else if (*data & BMI160_ACCEL_UNDERSAMPLING_MASK)
         {
-            if (*data & BMI160_ACCEL_UNDERSAMPLING_MASK)
-            {
-                temp = *data & ~BMI160_ACCEL_UNDERSAMPLING_MASK;
+            temp = *data & ~BMI160_ACCEL_UNDERSAMPLING_MASK;
 
-                /* disable under-sampling parameter
-                 * if already enabled */
-                *data = temp;
+            /* disable under-sampling parameter
+             * if already enabled */
+            *data = temp;
 
-                /* Write data */
-                rslt = bmi160_set_regs(BMI160_ACCEL_CONFIG_ADDR, data, 1, dev);
-            }
+            /* Write data */
+            rslt = bmi160_set_regs(BMI160_ACCEL_CONFIG_ADDR, data, 1, dev);
         }
     }
 
@@ -4644,13 +4666,11 @@ static int8_t extract_aux_read(uint16_t map_len,
                 {
                     read_len = (uint8_t)len;
                 }
-                else
+                else if ((len - count) < map_len)
                 {
-                    if ((len - count) < map_len)
-                    {
-                        read_len = (uint8_t)(len - count);
-                    }
+                    read_len = (uint8_t)(len - count);
                 }
+
                 for (; read_count < read_len; read_count++)
                 {
                     aux_data[count + read_count] = data[read_count];
@@ -5215,6 +5235,9 @@ static int8_t perform_gyro_self_test(const struct bmi160_dev *dev)
     rslt = enable_gyro_self_test(dev);
     if (rslt == BMI160_OK)
     {
+        /* Validate the gyro self test a delay of 50ms */
+        dev->delay_ms(50);
+
         /* Validate the gyro self test results */
         rslt = validate_gyro_self_test(dev);
     }
@@ -5258,6 +5281,7 @@ static int8_t validate_gyro_self_test(const struct bmi160_dev *dev)
     rslt = bmi160_get_regs(BMI160_STATUS_ADDR, &reg_data, 1, dev);
     if (rslt == BMI160_OK)
     {
+
         reg_data = BMI160_GET_BITS(reg_data, BMI160_GYRO_SELF_TEST_STATUS);
         if (reg_data == BMI160_ENABLE)
         {
@@ -5367,7 +5391,7 @@ static int8_t enable_fifo_wtm_int(const struct bmi160_int_settg *int_config, con
     rslt = bmi160_get_regs(BMI160_INT_ENABLE_1_ADDR, &data, 1, dev);
     if (rslt == BMI160_OK)
     {
-        data = BMI160_SET_BITS(data, BMI160_FIFO_WTM_INT, int_config->fifo_WTM_int_en);
+        data = BMI160_SET_BITS(data, BMI160_FIFO_WTM_INT, int_config->fifo_wtm_int_en);
 
         /* Writing data to INT ENABLE 1 Address */
         rslt = bmi160_set_regs(BMI160_INT_ENABLE_1_ADDR, &data, 1, dev);

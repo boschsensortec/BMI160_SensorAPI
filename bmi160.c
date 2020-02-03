@@ -3230,7 +3230,7 @@ static int8_t process_accel_bw(uint8_t *data, const struct bmi160_dev *dev)
             temp = *data & ~BMI160_ACCEL_BW_MASK;
 
             /* Adding bandwidth */
-            *data = temp | ((bw << 4) & BMI160_ACCEL_ODR_MASK);
+            *data = temp | ((bw << 4) & BMI160_ACCEL_BW_MASK);  //Should be BMI160_ACCEL_BW_MASK
         }
     }
     else

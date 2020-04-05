@@ -201,9 +201,6 @@ static int8_t set_accel_high_g_int(struct bmi160_int_settg *int_config, const st
  * Also maintain the previous state of configurations.
  *
  * @param[in] dev         : Structure instance of bmi160_dev.
- *
- * @return Result of API execution status
- * @retval zero -> Success / -ve value -> Error.
  */
 static void default_param_settg(struct bmi160_dev *dev);
 
@@ -1011,9 +1008,6 @@ static int8_t enable_fifo_wtm_int(const struct bmi160_int_settg *int_config, con
  *  in the fifo_frame structure.
  *
  * @param[in] dev       : structure instance of bmi160_dev.
- *
- * @return Result of API execution status
- * @retval zero -> Success  / -ve value -> Error
  */
 static void reset_fifo_data_structure(const struct bmi160_dev *dev);
 
@@ -1061,9 +1055,6 @@ static void get_accel_len_to_parse(uint16_t *data_index,
  *                                parameter in header-less mode or
  *                                frame header data in header mode
  *  @param[in] dev      : structure instance of bmi160_dev.
- *
- *  @return Result of API execution status
- *  @retval zero -> Success  / -ve value -> Error
  */
 static void unpack_accel_frame(struct bmi160_sensor_data *acc,
                                uint16_t *idx,
@@ -1078,9 +1069,6 @@ static void unpack_accel_frame(struct bmi160_sensor_data *acc,
  * @param[in,out] accel_data        : structure instance of sensor data
  * @param[in,out] data_start_index  : Index value of number of bytes parsed
  * @param[in] dev           : structure instance of bmi160_dev.
- *
- * @return Result of API execution status
- * @retval zero -> Success  / -ve value -> Error
  */
 static void unpack_accel_data(struct bmi160_sensor_data *accel_data,
                               uint16_t data_start_index,
@@ -1093,9 +1081,6 @@ static void unpack_accel_data(struct bmi160_sensor_data *accel_data,
  *  @param[in,out] accel_data    : Structure instance of sensor data
  *  @param[in,out] accel_length  : Number of accelerometer frames
  *  @param[in] dev               : Structure instance of bmi160_dev.
- *
- *  @return Result of API execution status
- *  @retval zero -> Success  / -ve value -> Error
  */
 static void extract_accel_header_mode(struct bmi160_sensor_data *accel_data,
                                       uint8_t *accel_length,
@@ -1129,9 +1114,6 @@ static void get_gyro_len_to_parse(uint16_t *data_index,
  *                                parameter in header-less mode or
  *                                frame header data in header mode
  *  @param[in] dev      : structure instance of bmi160_dev.
- *
- *  @return Result of API execution status
- *  @retval zero -> Success  / -ve value -> Error
  */
 static void unpack_gyro_frame(struct bmi160_sensor_data *gyro,
                               uint16_t *idx,
@@ -1146,9 +1128,6 @@ static void unpack_gyro_frame(struct bmi160_sensor_data *gyro,
  *  @param[in,out] gyro_data         : structure instance of sensor data
  *  @param[in,out] data_start_index  : Index value of number of bytes parsed
  *  @param[in] dev           : structure instance of bmi160_dev.
- *
- *  @return Result of API execution status
- *  @retval zero -> Success  / -ve value -> Error
  */
 static void unpack_gyro_data(struct bmi160_sensor_data *gyro_data,
                              uint16_t data_start_index,
@@ -1161,9 +1140,6 @@ static void unpack_gyro_data(struct bmi160_sensor_data *gyro_data,
  *  @param[in,out] gyro_data     : Structure instance of sensor data
  *  @param[in,out] gyro_length   : Number of gyro frames
  *  @param[in] dev               : Structure instance of bmi160_dev.
- *
- *  @return Result of API execution status
- *  @retval zero -> Success  / -ve value -> Error
  */
 static void extract_gyro_header_mode(struct bmi160_sensor_data *gyro_data,
                                      uint8_t *gyro_length,
@@ -1197,9 +1173,6 @@ static void get_aux_len_to_parse(uint16_t *data_index,
  *                                parameter in header-less mode or
  *                                frame header data in header mode
  *  @param[in] dev      : structure instance of bmi160_dev.
- *
- *  @return Result of API execution status
- *  @retval zero -> Success  / -ve value -> Error
  */
 static void unpack_aux_frame(struct bmi160_aux_data *aux_data,
                              uint16_t *idx,
@@ -1214,9 +1187,6 @@ static void unpack_aux_frame(struct bmi160_aux_data *aux_data,
  * @param[in,out] aux_data      : structure instance of sensor data
  * @param[in,out] data_start_index  : Index value of number of bytes parsed
  * @param[in] dev           : structure instance of bmi160_dev.
- *
- * @return Result of API execution status
- * @retval zero -> Success  / -ve value -> Error
  */
 static void unpack_aux_data(struct bmi160_aux_data *aux_data, uint16_t data_start_index, const struct bmi160_dev *dev);
 
@@ -1227,9 +1197,6 @@ static void unpack_aux_data(struct bmi160_aux_data *aux_data, uint16_t data_star
  *  @param[in,out] aux_data     : Structure instance of sensor data
  *  @param[in,out] aux_length   : Number of aux frames
  *  @param[in] dev              : Structure instance of bmi160_dev.
- *
- *  @return Result of API execution status
- *  @retval zero -> Success  / -ve value -> Error
  */
 static void extract_aux_header_mode(struct bmi160_aux_data *aux_data, uint8_t *aux_length,
                                     const struct bmi160_dev *dev);
@@ -1240,9 +1207,6 @@ static void extract_aux_header_mode(struct bmi160_aux_data *aux_data, uint8_t *a
  *  @param[in,out] data_index    : The index of the current data to
  *                                be parsed from fifo data
  *  @param[in] dev               : Structure instance of bmi160_dev.
- *
- *  @return Result of API execution status
- *  @retval zero -> Success  / -ve value -> Error
  */
 static void check_frame_validity(uint16_t *data_index, const struct bmi160_dev *dev);
 
@@ -1256,9 +1220,6 @@ static void check_frame_validity(uint16_t *data_index, const struct bmi160_dev *
  *                                  current_frame_length
  *  @param[in] current_frame_length : Number of bytes in a particular frame
  *  @param[in] dev                  : Structure instance of bmi160_dev.
- *
- *  @return Result of API execution status
- *  @retval zero -> Success  / -ve value -> Error
  */
 static void move_next_frame(uint16_t *data_index, uint8_t current_frame_length, const struct bmi160_dev *dev);
 
@@ -1269,9 +1230,6 @@ static void move_next_frame(uint16_t *data_index, uint8_t current_frame_length, 
  *  @param[in,out] data_index : Index of the FIFO data which
  *                              has the sensor time.
  *  @param[in] dev            : Structure instance of bmi160_dev.
- *
- *  @return Result of API execution status
- *  @retval zero -> Success  / -ve value -> Error
  */
 static void unpack_sensortime_frame(uint16_t *data_index, const struct bmi160_dev *dev);
 
@@ -1282,9 +1240,6 @@ static void unpack_sensortime_frame(uint16_t *data_index, const struct bmi160_de
  *  @param[in,out] data_index   : Index of the FIFO data which
  *                                    has the skipped frame count.
  *  @param[in] dev              : Structure instance of bmi160_dev.
- *
- *  @return Result of API execution status
- *  @retval zero -> Success  / -ve value -> Error
  */
 static void unpack_skipped_frame(uint16_t *data_index, const struct bmi160_dev *dev);
 

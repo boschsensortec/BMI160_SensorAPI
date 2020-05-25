@@ -185,6 +185,21 @@ int8_t bmi160_get_sensor_data(uint8_t select_sensor,
                               const struct bmi160_dev *dev);
 
 /*!
+ * @brief This API reads the temperature of the sensor in degree Celcius.
+ *
+ * @param[in]  dev             : Structure instance of bmi160_dev.
+ * @param[out] sensor_temp     : Pointer to store sensor temperature in degree Celcius
+ *
+ * @note Temperature data output must be divided by a factor of 1000
+ *
+ * Consider sensor_temp = 19520 , Then the actual temperature is 19.520 degree Celsius
+ *
+ * @return Result of API execution status
+ * @retval zero -> Success / -ve value -> Error
+ */
+int8_t bmi160_get_sensor_temperature(const struct bmi160_dev *dev, int32_t *sensor_temp);
+
+/*!
  * @brief This API configures the necessary interrupt based on
  *  the user settings in the bmi160_int_settg structure instance.
  *

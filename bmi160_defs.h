@@ -285,6 +285,7 @@
 #define BMI160_ACCEL_DATA_ADDR               UINT8_C(0x12)
 #define BMI160_STATUS_ADDR                   UINT8_C(0x1B)
 #define BMI160_INT_STATUS_ADDR               UINT8_C(0x1C)
+#define BMI160_TEMP_DATA_ADDR                UINT8_C(0x20)
 #define BMI160_FIFO_LENGTH_ADDR              UINT8_C(0x22)
 #define BMI160_FIFO_DATA_ADDR                UINT8_C(0x24)
 #define BMI160_ACCEL_CONFIG_ADDR             UINT8_C(0x40)

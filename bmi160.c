@@ -1719,6 +1719,54 @@ int8_t bmi160_get_sensor_data(uint8_t select_sensor,
 }
 
 /*!
+ * @brief This API reads the temperature of the sensor in degree Celcius
+ */
+int8_t bmi160_get_sensor_temperature(const struct bmi160_dev *dev, int32_t *sensor_temp)
+{
+    int8_t rslt;
+    uint8_t data[2] = { 0 };
+    uint16_t msb, lsb;
+    uint16_t msblsb;
+    int16_t temp;
+
+    /* Check for null pointer in the device structure */
+    rslt = null_ptr_check(dev);
+
+    /* Proceed if null check is fine */
+    if ((rslt == BMI160_OK) && (sensor_temp != NULL))
+    {
+        /* Read sensor temperature */
+        rslt = bmi160_get_regs(BMI160_TEMP_DATA_ADDR, data, 2, dev);
+
+        if (rslt == BMI160_OK)
+        {
+            msb = (data[0] << 3); /* MSB data */
+            lsb = (data[1] >> 5); /* LSB data */
+            msblsb = (uint16_t) (msb + lsb);
+
+            if (msblsb > 1023)
+            {
+                /* Updating the msblsb */
+                temp = (int16_t) (msblsb - 2048);
+            }
+            else
+            {
+                temp = (int16_t) msblsb;
+            }
+
+            /* sensor temperature */
+            *senor_temp = (temp * 2) + 23000;
+        }
+    }
+    else
+    {
+        rslt = BMI160_E_NULL_PTR;
+    }
+
+    return rslt;
+}
+
+/*!
  * @brief This API configures the necessary interrupt based on
  *  the user settings in the bmi160_int_settg structure instance.
  */

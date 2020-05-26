@@ -1755,7 +1755,7 @@ int8_t bmi160_get_sensor_temperature(const struct bmi160_dev *dev, int32_t *sens
             }
 
             /* sensor temperature */
-            *senor_temp = (temp * 2) + 23000;
+            *sensor_temp = (temp * 2) + 23000;
         }
     }
     else

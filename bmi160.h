@@ -1,50 +1,40 @@
 /**
- * Copyright (C) 2015 - 2016 Bosch Sensortec GmbH
- *
- * Redistribution and use in source and binary forms, with or without
- * modification, are permitted provided that the following conditions are met:
- *
- * Redistributions of source code must retain the above copyright
- * notice, this list of conditions and the following disclaimer.
- *
- * Redistributions in binary form must reproduce the above copyright
- * notice, this list of conditions and the following disclaimer in the
- * documentation and/or other materials provided with the distribution.
- *
- * Neither the name of the copyright holder nor the names of the
- * contributors may be used to endorse or promote products derived from
- * this software without specific prior written permission.
- *
- * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND
- * CONTRIBUTORS "AS IS" AND ANY EXPRESS OR
- * IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE IMPLIED
- * WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE ARE
- * DISCLAIMED. IN NO EVENT SHALL COPYRIGHT HOLDER
- * OR CONTRIBUTORS BE LIABLE FOR ANY
- * DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY,
- * OR CONSEQUENTIAL DAMAGES(INCLUDING, BUT NOT LIMITED TO,
- * PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES;
- * LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
- * HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY,
- * WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN
- * ANY WAY OUT OF THE USE OF THIS
- * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE
- *
- * The information provided is believed to be accurate and reliable.
- * The copyright holder assumes no responsibility
- * for the consequences of use
- * of such information nor for any infringement of patents or
- * other rights of third parties which may result from its use.
- * No license is granted by implication or otherwise under any patent or
- * patent rights of the copyright holder.
- *
- * @file    bmi160.h
- * @date    11 Jan 2018
- * @version 3.7.5
- * @brief
- *
- */
+* Copyright (c) 2020 Bosch Sensortec GmbH. All rights reserved.
+*
+* BSD-3-Clause
+*
+* Redistribution and use in source and binary forms, with or without
+* modification, are permitted provided that the following conditions are met:
+*
+* 1. Redistributions of source code must retain the above copyright
+*    notice, this list of conditions and the following disclaimer.
+*
+* 2. Redistributions in binary form must reproduce the above copyright
+*    notice, this list of conditions and the following disclaimer in the
+*    documentation and/or other materials provided with the distribution.
+*
+* 3. Neither the name of the copyright holder nor the names of its
+*    contributors may be used to endorse or promote products derived from
+*    this software without specific prior written permission.
+*
+* THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
+* "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
+* LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS
+* FOR A PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE
+* COPYRIGHT HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT,
+* INCIDENTAL, SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES
+* (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR
+* SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS INTERRUPTION)
+* HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN CONTRACT,
+* STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING
+* IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+* POSSIBILITY OF SUCH DAMAGE.
+*
+* @file bmi160.h
+* @date 10/01/2020
+* @version  3.8.1
+*
+*/
 
 /*!
  * @defgroup bmi160
@@ -56,8 +46,7 @@
 
 /*************************** C++ guard macro *****************************/
 #ifdef __cplusplus
-extern "C"
-{
+extern "C" {
 #endif
 
 #include "bmi160_defs.h"
@@ -68,7 +57,6 @@ extern "C"
 #include <string.h>
 #include <stdlib.h>
 #endif
-
 
 /*********************** User function prototypes ************************/
 
@@ -92,6 +80,10 @@ int8_t bmi160_init(struct bmi160_dev *dev);
  * @param[out] data     : Pointer to data buffer to store the read data.
  * @param[in] len       : No of bytes of data to be read.
  * @param[in] dev       : Structure instance of bmi160_dev.
+ *
+ * @note For most of the registers auto address increment applies, with the
+ * exception of a few special registers, which trap the address. For e.g.,
+ * Register address - 0x24(BMI160_FIFO_DATA_ADDR)
  *
  * @return Result of API execution status
  * @retval zero -> Success / -ve value -> Error
@@ -187,8 +179,10 @@ int8_t bmi160_get_power_mode(struct bmi160_pmu_status *pmu_status, const struct 
  * @return Result of API execution status
  * @retval zero -> Success  / -ve value -> Error
  */
-int8_t bmi160_get_sensor_data(uint8_t select_sensor, struct bmi160_sensor_data *accel,
-				struct bmi160_sensor_data *gyro, const struct bmi160_dev *dev);
+int8_t bmi160_get_sensor_data(uint8_t select_sensor,
+                              struct bmi160_sensor_data *accel,
+                              struct bmi160_sensor_data *gyro,
+                              const struct bmi160_dev *dev);
 
 /*!
  * @brief This API configures the necessary interrupt based on
@@ -206,8 +200,8 @@ int8_t bmi160_set_int_config(struct bmi160_int_settg *int_config, struct bmi160_
 /*!
  * @brief This API enables the step counter feature.
  *
- * @param[in] step_cnt_enable	: value to enable or disable
- * @param[in] dev		: Structure instance of bmi160_dev.
+ * @param[in] step_cnt_enable   : value to enable or disable
+ * @param[in] dev       : Structure instance of bmi160_dev.
  * @note : Refer user guide for detailed info.
  *
  * @return Result of API execution status
@@ -218,7 +212,7 @@ int8_t bmi160_set_step_counter(uint8_t step_cnt_enable, const struct bmi160_dev 
 /*!
  * @brief This API reads the step counter value.
  *
- * @param[in] step_val	  : Pointer to store the step counter value.
+ * @param[in] step_val    : Pointer to store the step counter value.
  * @param[in] dev         : Structure instance of bmi160_dev.
  * @note : Refer user guide for detailed info.
  *
@@ -231,9 +225,9 @@ int8_t bmi160_read_step_counter(uint16_t *step_val, const struct bmi160_dev *dev
  * @brief This API reads the mention no of byte of data from the given
  * register address of auxiliary sensor.
  *
- * @param[in] reg_addr	  : Address of register to read.
- * @param[in] aux_data	  : Pointer to store the read data.
- * @param[in] len	  : No of bytes to read.
+ * @param[in] reg_addr    : Address of register to read.
+ * @param[in] aux_data    : Pointer to store the read data.
+ * @param[in] len     : No of bytes to read.
  * @param[in] dev         : Structure instance of bmi160_dev.
  * @note : Refer user guide for detailed info.
  *
@@ -246,9 +240,9 @@ int8_t bmi160_aux_read(uint8_t reg_addr, uint8_t *aux_data, uint16_t len, const 
  * @brief This API writes the mention no of byte of data to the given
  * register address of auxiliary sensor.
  *
- * @param[in] reg_addr	  : Address of register to write.
- * @param[in] aux_data	  : Pointer to write data.
- * @param[in] len	  : No of bytes to write.
+ * @param[in] reg_addr    : Address of register to write.
+ * @param[in] aux_data    : Pointer to write data.
+ * @param[in] len     : No of bytes to write.
  * @param[in] dev         : Structure instance of bmi160_dev.
  * @note : Refer user guide for detailed info.
  *
@@ -274,11 +268,11 @@ int8_t bmi160_aux_init(const struct bmi160_dev *dev);
  * Thus enabling the auto update of 8 bytes of data from auxiliary sensor
  * to BMI160 register address 0x04 to 0x0B
  *
- * @param[in] data_addr	   : Starting address of aux. sensor's data register
+ * @param[in] data_addr    : Starting address of aux. sensor's data register
  *                           (BMI160 registers 0x04 to 0x0B will be updated
  *                           with 8 bytes of data from auxiliary sensor
  *                           starting from this register address.)
- * @param[in] dev	   : Structure instance of bmi160_dev.
+ * @param[in] dev      : Structure instance of bmi160_dev.
  *
  * @note : Set the value of auxiliary polling rate by setting
  *         dev->aux_cfg.aux_odr to the required value from the table
@@ -320,10 +314,10 @@ int8_t bmi160_config_aux_mode(const struct bmi160_dev *dev);
  * @brief This API is used to read the raw uncompensated auxiliary sensor
  * data of 8 bytes from BMI160 register address 0x04 to 0x0B
  *
- * @param[in] aux_data	     : Pointer to user array of length 8 bytes
+ * @param[in] aux_data       : Pointer to user array of length 8 bytes
  *                             Ensure that the aux_data array is of
  *                             length 8 bytes
- * @param[in] dev	     : Structure instance of bmi160_dev
+ * @param[in] dev        : Structure instance of bmi160_dev
  *
  * @return Result of API execution status
  * @retval zero -> Success  / -ve value -> Error
@@ -342,7 +336,7 @@ int8_t bmi160_read_aux_data_auto_mode(uint8_t *aux_data, const struct bmi160_dev
  *----------------------------------|--------------------------------
  *   BMI160_ACCEL_ONLY              | Accel self test enabled
  *   BMI160_GYRO_ONLY               | Gyro self test enabled
- *   BMI160_BOTH_ACCEL_AND_GYRO	    | NOT TO BE USED
+ *   BMI160_BOTH_ACCEL_AND_GYRO     | NOT TO BE USED
  *
  * @note The return value of this API gives us the result of self test.
  *
@@ -407,7 +401,7 @@ int8_t bmi160_set_fifo_flush(const struct bmi160_dev *dev);
  *      BMI160_FIFO_TAG_INT1    |   0x08
  *      BMI160_FIFO_HEADER      |   0x10
  *      BMI160_FIFO_AUX         |   0x20
- *      BMI160_FIFO_ACCEL	|   0x40
+ *      BMI160_FIFO_ACCEL   |   0x40
  *      BMI160_FIFO_GYRO        |   0x80
  *
  *  @param[in] enable : Parameter used to enable or disable the above
@@ -607,8 +601,9 @@ int8_t bmi160_extract_aux(struct bmi160_aux_data *aux_data, uint8_t *aux_len, st
  *  @retval 0 -> Success
  *  @retval Any non zero value -> Fail
  */
-int8_t bmi160_start_foc(const struct bmi160_foc_conf *foc_conf, struct bmi160_offsets *offset,
-				struct bmi160_dev const *dev);
+int8_t bmi160_start_foc(const struct bmi160_foc_conf *foc_conf,
+                        struct bmi160_offsets *offset,
+                        struct bmi160_dev const *dev);
 
 /*!
  *  @brief This API reads and stores the offset values of accel and gyro
@@ -646,8 +641,9 @@ int8_t bmi160_get_offsets(struct bmi160_offsets *offset, const struct bmi160_dev
  *  @retval 0 -> Success
  *  @retval Any non zero value -> Fail
  */
-int8_t bmi160_set_offsets(const struct bmi160_foc_conf *foc_conf, const struct bmi160_offsets *offset,
-				struct bmi160_dev const *dev);
+int8_t bmi160_set_offsets(const struct bmi160_foc_conf *foc_conf,
+                          const struct bmi160_offsets *offset,
+                          struct bmi160_dev const *dev);
 
 /*!
  *  @brief This API writes the image registers values to NVM which is
@@ -664,18 +660,19 @@ int8_t bmi160_update_nvm(struct bmi160_dev const *dev);
 /*!
  *  @brief This API gets the interrupt status from the sensor.
  *
- *  @param[in] int_status_sel		: Enum variable to select either individual or all the
+ *  @param[in] int_status_sel       : Enum variable to select either individual or all the
  *  interrupt status bits.
- *	@param[in] int_status			: pointer variable to get the interrupt status
- *	from the sensor.
- *	param[in] dev					: Structure instance of bmi160_dev.
+ *  @param[in] int_status           : pointer variable to get the interrupt status
+ *  from the sensor.
+ *  param[in] dev                   : Structure instance of bmi160_dev.
  *
  *  @return Result of API execution status
  *  @retval 0 -> Success
  *  @retval Any non zero value -> Fail
  */
 int8_t bmi160_get_int_status(enum bmi160_int_status_sel int_status_sel,
-				union bmi160_int_status *int_status, struct bmi160_dev const *dev);
+                             union bmi160_int_status *int_status,
+                             struct bmi160_dev const *dev);
 
 /*************************** C++ guard macro *****************************/
 #ifdef __cplusplus
@@ -683,5 +680,4 @@ int8_t bmi160_get_int_status(enum bmi160_int_status_sel int_status_sel,
 #endif
 
 #endif /* BMI160_H_ */
-
 /** @}*/

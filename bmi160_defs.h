@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2020 Bosch Sensortec GmbH. All rights reserved.
+* Copyright (c) 2021 Bosch Sensortec GmbH. All rights reserved.
 *
 * BSD-3-Clause
 *
@@ -31,8 +31,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 *
 * @file       bmi160_defs.h
-* @date       2021-03-12
-* @version    v3.9.1
+* @date       2021-10-05
+* @version    v3.9.2
 *
 */
 
@@ -349,8 +349,9 @@
 #define BMI160_E_LWP_PRE_FLTR_INT_INVALID         INT8_C(-8)
 #define BMI160_E_LWP_PRE_FLTR_INVALID             INT8_C(-9)
 #define BMI160_E_AUX_NOT_FOUND                    INT8_C(-10)
-#define BMI160_FOC_FAILURE                        INT8_C(-11)
-#define BMI160_READ_WRITE_LENGHT_INVALID          INT8_C(-12)
+#define BMI160_E_FOC_FAILURE                      INT8_C(-11)
+#define BMI160_E_READ_WRITE_LENGTH_INVALID        INT8_C(-12)
+#define BMI160_E_INVALID_CONFIG                   INT8_C(-13)
 
 /**\name API warning codes */
 #define BMI160_W_GYRO_SELF_TEST_FAIL              INT8_C(1)
@@ -371,7 +372,7 @@
 
 /* Delay in ms settings */
 #define BMI160_ACCEL_DELAY_MS                     UINT8_C(5)
-#define BMI160_GYRO_DELAY_MS                      UINT8_C(81)
+#define BMI160_GYRO_DELAY_MS                      UINT8_C(80)
 #define BMI160_ONE_MS_DELAY                       UINT8_C(1)
 #define BMI160_AUX_COM_DELAY                      UINT8_C(10)
 #define BMI160_GYRO_SELF_TEST_DELAY               UINT8_C(20)
@@ -711,34 +712,6 @@ typedef int8_t (*bmi160_write_fptr_t)(uint8_t dev_addr, uint8_t reg_addr, uint8_
 typedef void (*bmi160_delay_fptr_t)(uint32_t period);
 
 /*************************** Data structures *********************************/
-struct bmi160_pmu_status
-{
-    /*! Power mode status of Accel
-     * Possible values :
-     *  - BMI160_ACCEL_PMU_SUSPEND
-     *  - BMI160_ACCEL_PMU_NORMAL
-     *  - BMI160_ACCEL_PMU_LOW_POWER
-     */
-    uint8_t accel_pmu_status;
-
-    /*! Power mode status of Gyro
-     * Possible values :
-     *  - BMI160_GYRO_PMU_SUSPEND
-     *  - BMI160_GYRO_PMU_NORMAL
-     *  - BMI160_GYRO_PMU_FSU
-     */
-    uint8_t gyro_pmu_status;
-
-    /*! Power mode status of 'Auxiliary sensor interface' whereas the actual
-     *  power mode of the aux. sensor should be configured
-     *  according to the connected sensor specifications
-     * Possible values :
-     *  - BMI160_AUX_PMU_SUSPEND
-     *  - BMI160_AUX_PMU_NORMAL
-     *  - BMI160_AUX_PMU_LOW_POWER
-     */
-    uint8_t aux_pmu_status;
-};
 
 /*!
  * @brief bmi160 interrupt status selection enum.
@@ -756,7 +729,8 @@ enum bmi160_int_status_sel {
  */
 struct bmi160_int_status_bits
 {
-#if LITTLE_ENDIAN == 1
+#ifdef LITTLE_ENDIAN
+
     uint32_t step : 1;
     uint32_t sigmot : 1;
     uint32_t anym : 1;
@@ -789,7 +763,7 @@ struct bmi160_int_status_bits
     uint32_t orient_1_0 : 2;
     uint32_t orient_2 : 1;
     uint32_t flat : 1;
-#elif BIG_ENDIAN == 1
+#else
     uint32_t high_first_x : 1;
     uint32_t high_first_y : 1;
     uint32_t high_first_z : 1;
@@ -1098,7 +1072,7 @@ enum bmi160_any_sig_motion_active_interrupt_state {
 };
 struct bmi160_acc_tap_int_cfg
 {
-#if LITTLE_ENDIAN == 1
+#ifdef LITTLE_ENDIAN
 
     /*! tap threshold */
     uint16_t tap_thr : 5;
@@ -1117,7 +1091,7 @@ struct bmi160_acc_tap_int_cfg
 
     /*! tap enable, 1 - enable, 0 - disable */
     uint16_t tap_en : 1;
-#elif BIG_ENDIAN == 1
+#else
 
     /*! tap enable, 1 - enable, 0 - disable */
     uint16_t tap_en : 1;
@@ -1140,7 +1114,7 @@ struct bmi160_acc_tap_int_cfg
 };
 struct bmi160_acc_any_mot_int_cfg
 {
-#if LITTLE_ENDIAN == 1
+#ifdef LITTLE_ENDIAN
 
     /*! 1 any-motion enable, 0 - any-motion disable */
     uint8_t anymotion_en : 1;
@@ -1162,7 +1136,7 @@ struct bmi160_acc_any_mot_int_cfg
 
     /*! slope threshold */
     uint8_t anymotion_thr;
-#elif BIG_ENDIAN == 1
+#else
 
     /*! slope threshold */
     uint8_t anymotion_thr;
@@ -1188,7 +1162,7 @@ struct bmi160_acc_any_mot_int_cfg
 };
 struct bmi160_acc_sig_mot_int_cfg
 {
-#if LITTLE_ENDIAN == 1
+#ifdef LITTLE_ENDIAN
 
     /*! skip time of sig-motion interrupt */
     uint8_t sig_mot_skip : 2;
@@ -1204,7 +1178,7 @@ struct bmi160_acc_sig_mot_int_cfg
 
     /*! sig-motion threshold */
     uint8_t sig_mot_thres;
-#elif BIG_ENDIAN == 1
+#else
 
     /*! sig-motion threshold */
     uint8_t sig_mot_thres;
@@ -1224,7 +1198,7 @@ struct bmi160_acc_sig_mot_int_cfg
 };
 struct bmi160_acc_step_detect_int_cfg
 {
-#if LITTLE_ENDIAN == 1
+#ifdef LITTLE_ENDIAN
 
     /*! 1- step detector enable, 0- step detector disable */
     uint16_t step_detector_en : 1;
@@ -1240,7 +1214,7 @@ struct bmi160_acc_step_detect_int_cfg
 
     /*! minimum step buffer size*/
     uint16_t step_min_buf : 3;
-#elif BIG_ENDIAN == 1
+#else
 
     /*! minimum step buffer size*/
     uint16_t step_min_buf : 3;
@@ -1260,7 +1234,7 @@ struct bmi160_acc_step_detect_int_cfg
 };
 struct bmi160_acc_no_motion_int_cfg
 {
-#if LITTLE_ENDIAN == 1
+#ifdef LITTLE_ENDIAN
 
     /*! no motion interrupt x */
     uint16_t no_motion_x : 1;
@@ -1282,7 +1256,7 @@ struct bmi160_acc_no_motion_int_cfg
 
     /*! no motion threshold */
     uint8_t no_motion_thres;
-#elif BIG_ENDIAN == 1
+#else
 
     /*! no motion threshold */
     uint8_t no_motion_thres;
@@ -1308,7 +1282,7 @@ struct bmi160_acc_no_motion_int_cfg
 };
 struct bmi160_acc_orient_int_cfg
 {
-#if LITTLE_ENDIAN == 1
+#ifdef LITTLE_ENDIAN
 
     /*! thresholds for switching between the different orientations */
     uint16_t orient_mode : 2;
@@ -1330,7 +1304,7 @@ struct bmi160_acc_orient_int_cfg
 
     /*! 1 - orient enable, 0 - orient disable */
     uint8_t orient_en : 1;
-#elif BIG_ENDIAN == 1
+#else
 
     /*! 1 - orient enable, 0 - orient disable */
     uint8_t orient_en : 1;
@@ -1356,7 +1330,7 @@ struct bmi160_acc_orient_int_cfg
 };
 struct bmi160_acc_flat_detect_int_cfg
 {
-#if LITTLE_ENDIAN == 1
+#ifdef LITTLE_ENDIAN
 
     /*! flat threshold */
     uint16_t flat_theta : 6;
@@ -1370,7 +1344,7 @@ struct bmi160_acc_flat_detect_int_cfg
 
     /*! 1 - flat enable, 0 - flat disable */
     uint16_t flat_en : 1;
-#elif BIG_ENDIAN == 1
+#else
 
     /*! 1 - flat enable, 0 - flat disable */
     uint16_t flat_en : 1;
@@ -1388,7 +1362,7 @@ struct bmi160_acc_flat_detect_int_cfg
 };
 struct bmi160_acc_low_g_int_cfg
 {
-#if LITTLE_ENDIAN == 1
+#ifdef LITTLE_ENDIAN
 
     /*! low-g interrupt trigger delay */
     uint8_t low_dur;
@@ -1407,7 +1381,7 @@ struct bmi160_acc_low_g_int_cfg
 
     /*! 1 - enable low-g, 0 - disable low-g */
     uint8_t low_en : 1;
-#elif BIG_ENDIAN == 1
+#else
 
     /*! 1 - enable low-g, 0 - disable low-g */
     uint8_t low_en : 1;
@@ -1430,7 +1404,7 @@ struct bmi160_acc_low_g_int_cfg
 };
 struct bmi160_acc_high_g_int_cfg
 {
-#if LITTLE_ENDIAN == 1
+#ifdef LITTLE_ENDIAN
 
     /*! High-g interrupt x, 1 - enable, 0 - disable */
     uint8_t high_g_x : 1;
@@ -1452,7 +1426,7 @@ struct bmi160_acc_high_g_int_cfg
 
     /*! High-g duration */
     uint8_t high_dur;
-#elif BIG_ENDIAN == 1
+#else
 
     /*! High-g duration */
     uint8_t high_dur;
@@ -1478,7 +1452,7 @@ struct bmi160_acc_high_g_int_cfg
 };
 struct bmi160_int_pin_settg
 {
-#if LITTLE_ENDIAN == 1
+#ifdef LITTLE_ENDIAN
 
     /*! To enable either INT1 or INT2 pin as output.
      * 0- output disabled ,1- output enabled */
@@ -1500,7 +1474,7 @@ struct bmi160_int_pin_settg
 
     /*! latch duration*/
     uint16_t latch_dur : 4;
-#elif BIG_ENDIAN == 1
+#else
 
     /*! latch duration*/
     uint16_t latch_dur : 4;

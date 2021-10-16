@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2020 Bosch Sensortec GmbH. All rights reserved.
+* Copyright (c) 2021 Bosch Sensortec GmbH. All rights reserved.
 *
 * BSD-3-Clause
 *
@@ -31,8 +31,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 *
 * @file       bmi160.c
-* @date       2021-03-12
-* @version    v3.9.1
+* @date       2021-10-05
+* @version    v3.9.2
 *
 */
 
@@ -1383,7 +1383,7 @@ int8_t bmi160_get_regs(uint8_t reg_addr, uint8_t *data, uint16_t len, const stru
     }
     else if (len == 0)
     {
-        rslt = BMI160_READ_WRITE_LENGHT_INVALID;
+        rslt = BMI160_E_READ_WRITE_LENGTH_INVALID;
     }
     else
     {
@@ -1415,7 +1415,7 @@ int8_t bmi160_set_regs(uint8_t reg_addr, uint8_t *data, uint16_t len, const stru
     }
     else if (len == 0)
     {
-        rslt = BMI160_READ_WRITE_LENGHT_INVALID;
+        rslt = BMI160_E_READ_WRITE_LENGTH_INVALID;
     }
     else
     {
@@ -1627,7 +1627,7 @@ int8_t bmi160_set_power_mode(struct bmi160_dev *dev)
 /*!
  * @brief This API gets the power mode of the sensor.
  */
-int8_t bmi160_get_power_mode(struct bmi160_pmu_status *pmu_status, const struct bmi160_dev *dev)
+int8_t bmi160_get_power_mode(struct bmi160_dev *dev)
 {
     int8_t rslt = 0;
     uint8_t power_mode = 0;
@@ -1642,10 +1642,9 @@ int8_t bmi160_get_power_mode(struct bmi160_pmu_status *pmu_status, const struct 
         rslt = bmi160_get_regs(BMI160_PMU_STATUS_ADDR, &power_mode, 1, dev);
         if (rslt == BMI160_OK)
         {
-            /* Power mode of the accel,gyro,aux sensor is obtained */
-            pmu_status->aux_pmu_status = BMI160_GET_BITS_POS_0(power_mode, BMI160_MAG_POWER_MODE);
-            pmu_status->gyro_pmu_status = BMI160_GET_BITS(power_mode, BMI160_GYRO_POWER_MODE);
-            pmu_status->accel_pmu_status = BMI160_GET_BITS(power_mode, BMI160_ACCEL_POWER_MODE);
+            /* Power mode of the accel, gyro sensor is obtained */
+            dev->gyro_cfg.power = BMI160_GET_BITS(power_mode, BMI160_GYRO_POWER_MODE);
+            dev->accel_cfg.power = BMI160_GET_BITS(power_mode, BMI160_ACCEL_POWER_MODE);
         }
     }
 
@@ -3523,7 +3522,7 @@ static int8_t set_accel_pwr(struct bmi160_dev *dev)
     }
     else
     {
-        rslt = BMI160_E_OUT_OF_RANGE;
+        rslt = BMI160_E_INVALID_CONFIG;
     }
 
     return rslt;
@@ -3536,7 +3535,7 @@ static int8_t process_under_sampling(uint8_t *data, const struct bmi160_dev *dev
 {
     int8_t rslt;
     uint8_t temp = 0;
-    uint8_t pre_filter = 0;
+    uint8_t pre_filter[2] = { 0 };
 
     rslt = bmi160_get_regs(BMI160_ACCEL_CONFIG_ADDR, data, 1, dev);
     if (rslt == BMI160_OK)
@@ -3551,20 +3550,18 @@ static int8_t process_under_sampling(uint8_t *data, const struct bmi160_dev *dev
             /* Write data */
             rslt = bmi160_set_regs(BMI160_ACCEL_CONFIG_ADDR, data, 1, dev);
 
-            /* disable the pre-filter data in
-             * low power mode */
+            /* Disable the pre-filter data in low power mode */
             if (rslt == BMI160_OK)
             {
                 /* Disable the Pre-filter data*/
-                rslt = bmi160_set_regs(BMI160_INT_DATA_0_ADDR, &pre_filter, 2, dev);
+                rslt = bmi160_set_regs(BMI160_INT_DATA_0_ADDR, pre_filter, 2, dev);
             }
         }
         else if (*data & BMI160_ACCEL_UNDERSAMPLING_MASK)
         {
             temp = *data & ~BMI160_ACCEL_UNDERSAMPLING_MASK;
 
-            /* disable under-sampling parameter
-             * if already enabled */
+            /* Disable under-sampling parameter if already enabled */
             *data = temp;
 
             /* Write data */
@@ -3611,7 +3608,7 @@ static int8_t set_gyro_pwr(struct bmi160_dev *dev)
     }
     else
     {
-        rslt = BMI160_E_OUT_OF_RANGE;
+        rslt = BMI160_E_INVALID_CONFIG;
     }
 
     return rslt;
@@ -6379,6 +6376,7 @@ static int8_t configure_offset_enable(const struct bmi160_foc_conf *foc_conf, st
 
     return rslt;
 }
+
 static int8_t trigger_foc(struct bmi160_offsets *offset, struct bmi160_dev const *dev)
 {
     int8_t rslt;
@@ -6415,7 +6413,7 @@ static int8_t trigger_foc(struct bmi160_offsets *offset, struct bmi160_dev const
             else
             {
                 /* FOC failure case */
-                rslt = BMI160_FOC_FAILURE;
+                rslt = BMI160_E_FOC_FAILURE;
             }
         }
 

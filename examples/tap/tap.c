@@ -1,11 +1,7 @@
 /**
- * Copyright (C) 2018 Bosch Sensortec GmbH
+ * Copyright (C) 2021 Bosch Sensortec GmbH. All rights reserved.
  *
  * SPDX-License-Identifier: BSD-3-Clause
- *
- * @file    bmi160_read_sensor_data.c
- * @brief   Sample file to read BMI160 sensor data using COINES library
- *
  */
 
 /*********************************************************************/

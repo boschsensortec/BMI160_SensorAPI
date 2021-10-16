@@ -1,5 +1,5 @@
 /**
-* Copyright (c) 2020 Bosch Sensortec GmbH. All rights reserved.
+* Copyright (c) 2021 Bosch Sensortec GmbH. All rights reserved.
 *
 * BSD-3-Clause
 *
@@ -31,8 +31,8 @@
 * POSSIBILITY OF SUCH DAMAGE.
 *
 * @file       bmi160.h
-* @date       2021-03-12
-* @version    v3.9.1
+* @date       2021-10-05
+* @version    v3.9.2
 *
 */
 
@@ -224,33 +224,17 @@ int8_t bmi160_set_power_mode(struct bmi160_dev *dev);
  * \ingroup bmi160ApiPowermode
  * \page bmi160_api_bmi160_get_power_mode bmi160_get_power_mode
  * \code
- * int8_t bmi160_get_power_mode(struct bmi160_pmu_status *pmu_status, const struct bmi160_dev *dev);
+ * int8_t bmi160_get_power_mode(struct bmi160_dev *dev);
  * \endcode
  * @details This API gets the power mode of the sensor.
  *
- * @param[in] power_mode  : Power mode of the sensor
  * @param[in] dev         : Structure instance of bmi160_dev
- *
- * power_mode Macros possible values for pmu_status->aux_pmu_status :
- *  - BMI160_AUX_PMU_SUSPEND
- *  - BMI160_AUX_PMU_NORMAL
- *  - BMI160_AUX_PMU_LOW_POWER
- *
- * power_mode Macros possible values for pmu_status->gyro_pmu_status :
- *  - BMI160_GYRO_PMU_SUSPEND
- *  - BMI160_GYRO_PMU_NORMAL
- *  - BMI160_GYRO_PMU_FSU
- *
- * power_mode Macros possible values for pmu_status->accel_pmu_status :
- *  - BMI160_ACCEL_PMU_SUSPEND
- *  - BMI160_ACCEL_PMU_NORMAL
- *  - BMI160_ACCEL_PMU_LOW_POWER
  *
  * @return Result of API execution status
  * @retval Zero Success
  * @retval Negative Error
  */
-int8_t bmi160_get_power_mode(struct bmi160_pmu_status *pmu_status, const struct bmi160_dev *dev);
+int8_t bmi160_get_power_mode(struct bmi160_dev *dev);
 
 /**
  * \ingroup bmi160

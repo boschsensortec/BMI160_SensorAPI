@@ -220,7 +220,7 @@ int main(int argc, char *argv[])
 
     init_bmi160_sensor_driver_interface();
 
-    rslt = coines_open_comm_intf(COINES_COMM_INTF_USB);
+    rslt = coines_open_comm_intf(COINES_COMM_INTF_USB,NULL);
 
     if (rslt < 0)
     {
@@ -308,7 +308,7 @@ int main(int argc, char *argv[])
         fflush(stdout);
     }
 
-    coines_close_comm_intf(COINES_COMM_INTF_USB);
+    coines_close_comm_intf(COINES_COMM_INTF_USB,NULL);
 
     return EXIT_SUCCESS;
 }

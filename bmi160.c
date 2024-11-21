@@ -1409,7 +1409,9 @@ int8_t bmi160_set_regs(uint8_t reg_addr, uint8_t *data, uint16_t len, const stru
     uint8_t count = 0;
 
     /* Null-pointer check */
-    if ((dev == NULL) || (dev->write == NULL))
+    rslt = null_ptr_check(dev);
+    
+    if (BMI160_OK != rslt)
     {
         rslt = BMI160_E_NULL_PTR;
     }
